@@ -283,7 +283,7 @@ export function UploadForm() {
 
       {state.step === "done" && (
         <div role="status" className="flex flex-col gap-1 rounded-lg bg-muted p-4">
-          <p className="font-medium">회의 분석까지 끝났습니다.</p>
+          <p className="font-medium">회의 분석과 AI 대안까지 끝났습니다.</p>
           <p className="text-sm break-all">{state.reportUrl}</p>
           <p className="text-sm text-muted-foreground">
             보고서 저장과 보고서 화면은 아직 준비 중입니다.

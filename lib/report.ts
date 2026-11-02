@@ -72,6 +72,10 @@ export const reportSchema = z.object({
 
 export type Report = z.infer<typeof reportSchema>;
 
+export const alternativesSchema = reportSchema.pick({ alternatives: true });
+
+export type Alternatives = z.infer<typeof alternativesSchema>;
+
 // 대안을 뺀 회의 분석 결과다. 대안은 따로 만든다.
 export const meetingAnalysisSchema = reportSchema.omit({ alternatives: true });
 

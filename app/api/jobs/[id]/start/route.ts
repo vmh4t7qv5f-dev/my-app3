@@ -1,4 +1,4 @@
-import { analyzeMeeting } from "@/lib/server/analyze";
+import { createReport } from "@/lib/server/analyze";
 import { findAudioProblem } from "@/lib/server/audio-check";
 import {
   discardJob,
@@ -12,7 +12,7 @@ import {
 } from "@/lib/server/jobs";
 import { isTranscriptTooShort, transcribeAudio } from "@/lib/server/transcribe";
 
-// 업로드된 파일을 검사해 변환하고 분석한 뒤 고유 링크를 알려 준다.
+// 업로드된 파일을 검사해 변환하고 보고서 내용을 만든 뒤 고유 링크를 알려 준다.
 export async function POST(
   _request: Request,
   ctx: RouteContext<"/api/jobs/[id]/start">,
@@ -45,8 +45,8 @@ export async function POST(
     }
 
     await markJobAnalyzing(id);
-    const analysis = await analyzeMeeting(transcript);
-    if (!analysis) {
+    const report = await createReport(transcript);
+    if (!report) {
       await discardJob(id);
       return Response.json({ error: "not_a_meeting" }, { status: 422 });
     }

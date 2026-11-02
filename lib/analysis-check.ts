@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 
 import {
   meetingAnalysisSchema,
+  type Alternatives,
   type MeetingAnalysis,
   type MeetingAnalysisDraft,
 } from "./report";
@@ -99,24 +100,38 @@ function moveUnagreedDecisions(draft: MeetingAnalysisDraft): MeetingAnalysis {
   });
 }
 
-// 답변을 받아 검사하고, 형식이나 인용이 틀리면 1회 다시 생성한다. 회의가 아니면 null을 돌려준다.
-export async function getCheckedAnalysis(
+// 형식이 틀리거나 accept가 undefined를 돌려주면 1회 다시 생성한다.
+async function retryUntilAccepted<Reply, Result>(
+  requestReply: () => Promise<Reply | null>,
+  accept: (reply: Reply | null) => Result | undefined,
+): Promise<Result> {
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    try {
+      const result = accept(await requestReply());
+      if (result !== undefined) return result;
+    } catch (cause) {
+      if (!(cause instanceof ZodError)) throw cause;
+    }
+  }
+  throw new Error("검사를 통과한 AI 답변을 받지 못했습니다.");
+}
+
+// 분석 답변을 받아 검사한다. 회의가 아니면 null을 돌려준다.
+export function getCheckedAnalysis(
   segments: TranscriptSegment[],
   requestReply: () => Promise<AnalysisReply | null>,
 ): Promise<MeetingAnalysis | null> {
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    let reply: AnalysisReply | null;
-    try {
-      reply = await requestReply();
-    } catch (cause) {
-      if (cause instanceof ZodError) continue;
-      throw cause;
-    }
-
+  return retryUntilAccepted(requestReply, (reply) => {
     if (reply && !reply.isMeeting) return null;
-    if (reply?.analysis && hasOnlyRealQuotes(reply.analysis, segments)) {
-      return moveUnagreedDecisions(reply.analysis);
-    }
-  }
-  throw new Error("검사를 통과한 분석 결과를 받지 못했습니다.");
+    return reply?.analysis && hasOnlyRealQuotes(reply.analysis, segments)
+      ? moveUnagreedDecisions(reply.analysis)
+      : undefined;
+  });
+}
+
+// 대안의 개수와 필수 항목은 답변 형식 검사에서 걸러진다.
+export function getCheckedAlternatives(
+  requestReply: () => Promise<Alternatives | null>,
+): Promise<Alternatives> {
+  return retryUntilAccepted(requestReply, (reply) => reply ?? undefined);
 }
