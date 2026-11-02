@@ -71,8 +71,8 @@ npm run lint   # ESLint
 
 ## 현재 상태
 
-- 진행 단계: 개발 단위 1번(기반 준비) 시작 전. 단위가 끝날 때마다 이 줄을 고친다.
-- `create-next-app`의 기본 페이지만 있다. Supabase, OpenAI, shadcn/ui는 아직 설치하거나 연동하지 않았다.
+- 진행 단계: 개발 단위 1번(기반 준비) 완료, 2번(음성 업로드) 시작 전. 단위가 끝날 때마다 이 줄을 고친다.
+- 화면은 임시 첫 화면만 있다. shadcn/ui를 설치했고, Supabase 테이블과 `audio` 저장 공간을 만들었으며, 서버 전용 연결 코드는 `lib/server/`에 있다.
 - Git 저장소이며 기본 브랜치는 `main`이다. `trash-can/`과 `.bkit/`(플러그인 작업 기록)은 `.gitignore`로 제외한다.
 - `@/*`는 프로젝트 루트를 가리키고, `src/` 폴더는 쓰지 않는다.
 - `next.config.ts`에서 `cacheComponents`와 `partialPrefetching`이 켜져 있으며, Tailwind는 `@tailwindcss/turbopack` 로더로 처리한다.
