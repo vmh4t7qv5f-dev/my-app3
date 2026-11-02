@@ -53,3 +53,18 @@ export async function isAudioUploaded(id: string): Promise<boolean> {
   const { data } = await getSupabase().storage.from(AUDIO_BUCKET).exists(id);
   return data;
 }
+
+// 검사에 걸린 파일은 분석하지 않으므로 음성과 작업을 바로 지운다.
+export async function discardJob(id: string): Promise<void> {
+  const supabase = getSupabase();
+  const { error: removeError } = await supabase.storage
+    .from(AUDIO_BUCKET)
+    .remove([id]);
+  if (removeError) throw new Error("음성을 지우지 못했습니다.");
+
+  const { error: deleteError } = await supabase
+    .from("jobs")
+    .delete()
+    .eq("id", id);
+  if (deleteError) throw new Error("작업을 지우지 못했습니다.");
+}

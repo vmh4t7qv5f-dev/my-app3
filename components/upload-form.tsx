@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type DragEvent } from "react";
+import { useRef, useState, type DragEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -8,26 +8,63 @@ import {
   ProgressLabel,
   ProgressValue,
 } from "@/components/ui/progress";
+import {
+  CONTENT_TYPES_BY_EXTENSION,
+  getFileExtension,
+  isUploadErrorCode,
+  MAX_DURATION_SECONDS,
+  MAX_FILE_BYTES,
+  UPLOAD_ERROR_MESSAGES,
+  type UploadErrorCode,
+} from "@/lib/upload-rules";
 
 type UploadState =
   | { step: "idle" }
   | { step: "uploading"; percent: number }
   | { step: "done"; reportUrl: string };
 
-// 브라우저마다 음성 형식을 다르게 알려 주므로 확장자를 기준으로 정한다.
-const CONTENT_TYPES: Record<string, string> = {
-  mp3: "audio/mpeg",
-  m4a: "audio/mp4",
-  wav: "audio/wav",
-};
+const DURATION_READ_TIMEOUT_MS = 10_000;
 
 function getContentType(file: File): string {
-  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-  return CONTENT_TYPES[extension] ?? file.type;
+  return CONTENT_TYPES_BY_EXTENSION[getFileExtension(file.name)] ?? file.type;
 }
 
 function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+// 브라우저가 길이를 읽지 못하면 null을 돌려준다.
+function readDuration(file: File): Promise<number | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const audio = new Audio();
+    const finish = (duration: number | null) => {
+      clearTimeout(timer);
+      URL.revokeObjectURL(url);
+      resolve(duration);
+    };
+    const timer = setTimeout(() => finish(null), DURATION_READ_TIMEOUT_MS);
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () =>
+      finish(Number.isFinite(audio.duration) ? audio.duration : null);
+    audio.onerror = () => finish(null);
+    audio.src = url;
+  });
+}
+
+// 업로드 전에 걸러 낼 수 있는 문제를 찾는다. 브라우저가 재생하지 못하는 정상 파일도
+// 있으므로 손상 여부는 여기서 단정하지 않고 서버 검사에 맡긴다.
+async function findFileProblem(file: File): Promise<UploadErrorCode | null> {
+  if (!(getFileExtension(file.name) in CONTENT_TYPES_BY_EXTENSION)) {
+    return "unsupported_format";
+  }
+  if (file.size === 0) return "empty_file";
+  if (file.size > MAX_FILE_BYTES) return "too_large";
+
+  const duration = await readDuration(file);
+  return duration !== null && duration > MAX_DURATION_SECONDS
+    ? "too_long"
+    : null;
 }
 
 // 진행률을 받으려면 fetch가 아니라 XMLHttpRequest를 써야 한다.
@@ -59,24 +96,43 @@ export function UploadForm() {
   const [state, setState] = useState<UploadState>({ step: "idle" });
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+  const latestSelection = useRef(0);
 
   const isUploading = state.step === "uploading";
 
-  function selectFiles(files: FileList | null) {
+  async function selectFiles(files: FileList | null) {
     if (!files || files.length === 0 || isUploading) return;
+
+    const selection = ++latestSelection.current;
+    setFile(null);
+    setState({ step: "idle" });
+
     if (files.length > 1) {
+      setIsChecking(false);
       setError("파일은 한 번에 1개만 올릴 수 있습니다.");
       return;
     }
+
     setError(null);
-    setState({ step: "idle" });
-    setFile(files[0]);
+    setIsChecking(true);
+    const selected = files[0];
+    const problem = await findFileProblem(selected);
+
+    // 검사 중에 다른 파일을 고르면 이전 결과는 버린다.
+    if (selection !== latestSelection.current) return;
+    setIsChecking(false);
+    if (problem) {
+      setError(UPLOAD_ERROR_MESSAGES[problem]);
+    } else {
+      setFile(selected);
+    }
   }
 
   function handleDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
     setIsDragging(false);
-    selectFiles(event.dataTransfer.files);
+    void selectFiles(event.dataTransfer.files);
   }
 
   async function handleStart() {
@@ -96,7 +152,10 @@ export function UploadForm() {
       const started = await fetch(`/api/jobs/${job.id}/start`, {
         method: "POST",
       });
-      if (!started.ok) throw new Error("job_start_failed");
+      if (!started.ok) {
+        const { error: code }: { error?: string } = await started.json();
+        throw new Error(code ?? "job_start_failed");
+      }
       const { reportPath }: { reportPath: string } = await started.json();
 
       setState({
@@ -104,11 +163,17 @@ export function UploadForm() {
         reportUrl: new URL(reportPath, window.location.origin).toString(),
       });
       setFile(null);
-    } catch {
+    } catch (cause) {
+      const code = cause instanceof Error ? cause.message : "";
       setState({ step: "idle" });
-      setError(
-        "업로드하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.",
-      );
+      if (isUploadErrorCode(code)) {
+        setFile(null);
+        setError(UPLOAD_ERROR_MESSAGES[code]);
+      } else {
+        setError(
+          "업로드하지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.",
+        );
+      }
     }
   }
 
@@ -131,11 +196,13 @@ export function UploadForm() {
           className="sr-only"
           disabled={isUploading}
           onChange={(event) => {
-            selectFiles(event.target.files);
+            void selectFiles(event.target.files);
             event.target.value = "";
           }}
         />
-        {file ? (
+        {isChecking ? (
+          <span className="font-medium">파일을 확인하고 있습니다...</span>
+        ) : file ? (
           <>
             <span className="font-medium break-all">{file.name}</span>
             <span className="text-sm text-muted-foreground">
