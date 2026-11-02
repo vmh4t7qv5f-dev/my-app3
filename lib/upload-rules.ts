@@ -13,7 +13,8 @@ export type UploadErrorCode =
   | "too_large"
   | "too_long"
   | "empty_file"
-  | "damaged_file";
+  | "damaged_file"
+  | "too_little_speech";
 
 export const UPLOAD_ERROR_MESSAGES: Record<UploadErrorCode, string> = {
   unsupported_format:
@@ -26,6 +27,8 @@ export const UPLOAD_ERROR_MESSAGES: Record<UploadErrorCode, string> = {
     "파일이 비어 있습니다. 녹음 파일을 확인하고 다시 올려 주세요.",
   damaged_file:
     "파일을 읽을 수 없습니다. 손상되었거나 음성 파일이 아닐 수 있습니다. 원본을 다시 저장한 뒤 올려 주세요.",
+  too_little_speech:
+    "음성에서 알아들은 내용이 300자 미만이라 분석할 수 없습니다. 회의 내용이 제대로 녹음되었는지 음성 파일을 확인하고 다시 올려 주세요.",
 };
 
 export function getFileExtension(fileName: string): string {

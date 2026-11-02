@@ -15,6 +15,13 @@ export type Transcript = {
   segments: TranscriptSegment[];
 };
 
+const MIN_TRANSCRIPT_CHARACTERS = 300;
+
+// 글자 수는 공백을 포함해 센다.
+export function isTranscriptTooShort(transcript: Transcript): boolean {
+  return transcript.text.length < MIN_TRANSCRIPT_CHARACTERS;
+}
+
 // 저장된 파일에는 확장자가 없으므로 올릴 때 지정한 형식으로 파일 이름을 만든다.
 const FILE_NAMES_BY_TYPE: Record<string, string> = {
   "audio/mpeg": "audio.mp3",

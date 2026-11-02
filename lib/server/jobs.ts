@@ -62,6 +62,18 @@ export async function downloadAudio(id: string): Promise<Blob> {
   return data;
 }
 
+// 같은 음성을 두 번 변환해 비용을 쓰지 않도록 대기 중인 작업만 변환 상태로 바꾼다.
+export async function markJobTranscribing(id: string): Promise<boolean> {
+  const { data, error } = await getSupabase()
+    .from("jobs")
+    .update({ status: "transcribing" })
+    .eq("id", id)
+    .eq("status", "pending")
+    .select("id");
+  if (error) throw new Error("작업 상태를 바꾸지 못했습니다.");
+  return data.length > 0;
+}
+
 // 검사에 걸린 파일은 분석하지 않으므로 음성과 작업을 바로 지운다.
 export async function discardJob(id: string): Promise<void> {
   const supabase = getSupabase();

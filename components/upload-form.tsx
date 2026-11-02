@@ -21,6 +21,7 @@ import {
 type UploadState =
   | { step: "idle" }
   | { step: "uploading"; percent: number }
+  | { step: "transcribing" }
   | { step: "done"; reportUrl: string };
 
 const DURATION_READ_TIMEOUT_MS = 10_000;
@@ -99,7 +100,8 @@ export function UploadForm() {
   const [isChecking, setIsChecking] = useState(false);
   const latestSelection = useRef(0);
 
-  const isUploading = state.step === "uploading";
+  const isUploading =
+    state.step === "uploading" || state.step === "transcribing";
 
   async function selectFiles(files: FileList | null) {
     if (!files || files.length === 0 || isUploading) return;
@@ -149,6 +151,7 @@ export function UploadForm() {
         setState({ step: "uploading", percent }),
       );
 
+      setState({ step: "transcribing" });
       const started = await fetch(`/api/jobs/${job.id}/start`, {
         method: "POST",
       });
@@ -234,9 +237,15 @@ export function UploadForm() {
         </Progress>
       )}
 
+      {state.step === "transcribing" && (
+        <p role="status" className="text-sm font-medium">
+          음성을 텍스트로 바꾸고 있습니다. 긴 음성은 몇 분 걸릴 수 있습니다.
+        </p>
+      )}
+
       {state.step === "done" && (
         <div role="status" className="flex flex-col gap-1 rounded-lg bg-muted p-4">
-          <p className="font-medium">업로드가 끝났습니다.</p>
+          <p className="font-medium">음성 변환까지 끝났습니다.</p>
           <p className="text-sm break-all">{state.reportUrl}</p>
           <p className="text-sm text-muted-foreground">
             분석과 보고서 화면은 아직 준비 중입니다.
@@ -265,7 +274,11 @@ export function UploadForm() {
         disabled={!file || isUploading}
         onClick={handleStart}
       >
-        {isUploading ? "업로드 중..." : "분석 시작"}
+        {state.step === "uploading"
+          ? "업로드 중..."
+          : state.step === "transcribing"
+            ? "변환 중..."
+            : "분석 시작"}
       </Button>
     </div>
   );

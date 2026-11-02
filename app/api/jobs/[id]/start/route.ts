@@ -6,9 +6,11 @@ import {
   isAudioUploaded,
   isJobWaitingForStart,
   isValidJobId,
+  markJobTranscribing,
 } from "@/lib/server/jobs";
+import { isTranscriptTooShort, transcribeAudio } from "@/lib/server/transcribe";
 
-// 업로드된 파일을 검사하고, 문제가 없으면 고유 링크를 알려 준다.
+// 업로드된 파일을 검사해 변환하고, 내용이 충분하면 고유 링크를 알려 준다.
 export async function POST(
   _request: Request,
   ctx: RouteContext<"/api/jobs/[id]/start">,
@@ -23,10 +25,21 @@ export async function POST(
       return Response.json({ error: "upload_incomplete" }, { status: 409 });
     }
 
-    const problem = await findAudioProblem(await downloadAudio(id));
+    const audio = await downloadAudio(id);
+    const problem = await findAudioProblem(audio);
     if (problem) {
       await discardJob(id);
       return Response.json({ error: problem }, { status: 422 });
+    }
+
+    if (!(await markJobTranscribing(id))) {
+      return Response.json({ error: "job_not_found" }, { status: 404 });
+    }
+
+    const transcript = await transcribeAudio(audio);
+    if (isTranscriptTooShort(transcript)) {
+      await discardJob(id);
+      return Response.json({ error: "too_little_speech" }, { status: 422 });
     }
 
     return Response.json({ reportPath: getReportPath(id) });
