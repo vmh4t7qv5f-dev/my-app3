@@ -3,10 +3,11 @@ import "server-only";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 
+import { getCheckedAnalysis } from "@/lib/analysis-check";
 import {
   MAX_TOPICS,
   meetingAnalysisDraftSchema,
-  type MeetingAnalysisDraft,
+  type MeetingAnalysis,
 } from "@/lib/report";
 
 import { ANALYSIS_MODEL, getOpenAI } from "./openai";
@@ -58,20 +59,20 @@ function toPromptText(transcript: Transcript): string {
 // 회의를 분석한다. 회의가 아니면 null을 돌려준다. 내용은 저장하거나 로그에 남기지 않는다.
 export async function analyzeMeeting(
   transcript: Transcript,
-): Promise<MeetingAnalysisDraft | null> {
-  const completion = await getOpenAI().chat.completions.parse({
-    model: ANALYSIS_MODEL,
-    store: false,
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: toPromptText(transcript) },
-    ],
-    response_format: zodResponseFormat(analysisReplySchema, "meeting_analysis"),
+): Promise<MeetingAnalysis | null> {
+  return getCheckedAnalysis(transcript.segments, async () => {
+    const completion = await getOpenAI().chat.completions.parse({
+      model: ANALYSIS_MODEL,
+      store: false,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: toPromptText(transcript) },
+      ],
+      response_format: zodResponseFormat(
+        analysisReplySchema,
+        "meeting_analysis",
+      ),
+    });
+    return completion.choices[0]?.message.parsed ?? null;
   });
-
-  const reply = completion.choices[0]?.message.parsed;
-  if (!reply) throw new Error("분석 결과를 받지 못했습니다.");
-  if (!reply.isMeeting) return null;
-  if (!reply.analysis) throw new Error("분석 결과가 비어 있습니다.");
-  return reply.analysis;
 }

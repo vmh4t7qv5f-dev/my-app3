@@ -72,14 +72,17 @@ export const reportSchema = z.object({
 
 export type Report = z.infer<typeof reportSchema>;
 
-// AI의 회의 분석 답변이다. 대안은 따로 만든다. 동의 인용이 없는 결정도 일단 받아서
-// 저장 전 검사에서 "미해결"로 옮기므로 이 단계에서는 빈 목록을 허용한다.
-export const meetingAnalysisDraftSchema = reportSchema
-  .omit({ alternatives: true })
-  .extend({
-    decisions: z.array(
-      decisionSchema.extend({ agreementQuotes: z.array(quoteSchema) }),
-    ),
-  });
+// 대안을 뺀 회의 분석 결과다. 대안은 따로 만든다.
+export const meetingAnalysisSchema = reportSchema.omit({ alternatives: true });
+
+export type MeetingAnalysis = z.infer<typeof meetingAnalysisSchema>;
+
+// AI의 회의 분석 답변이다. 동의 인용이 없는 결정도 일단 받아서 코드 검사에서
+// "미해결"로 옮기므로 이 단계에서는 빈 목록을 허용한다.
+export const meetingAnalysisDraftSchema = meetingAnalysisSchema.extend({
+  decisions: z.array(
+    decisionSchema.extend({ agreementQuotes: z.array(quoteSchema) }),
+  ),
+});
 
 export type MeetingAnalysisDraft = z.infer<typeof meetingAnalysisDraftSchema>;
