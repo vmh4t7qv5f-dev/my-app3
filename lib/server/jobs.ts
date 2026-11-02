@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomBytes } from "node:crypto";
 
-import type { Report } from "@/lib/report";
+import { reportSchema, type Report } from "@/lib/report";
 
 import { AUDIO_BUCKET, getSupabase } from "./supabase";
 
@@ -82,6 +82,23 @@ export async function markJobAnalyzing(id: string): Promise<void> {
     .update({ status: "analyzing" })
     .eq("id", id);
   if (error) throw new Error("작업 상태를 바꾸지 못했습니다.");
+}
+
+// 없거나 만료된 보고서는 null을 돌려준다. 정리 기능이 지우기 전이라도 만료되면 보이지 않는다.
+export async function getReport(id: string): Promise<Report | null> {
+  const { data, error } = await getSupabase()
+    .from("reports")
+    .select("content")
+    .eq("job_id", id)
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle();
+  if (error) throw new Error("보고서를 읽지 못했습니다.");
+  if (!data) return null;
+
+  // 검사 오류의 상세 내용이 로그에 남지 않도록 직접 문구를 정한다.
+  const report = reportSchema.safeParse(data.content);
+  if (!report.success) throw new Error("보고서 형식이 올바르지 않습니다.");
+  return report.data;
 }
 
 async function removeAudio(id: string): Promise<void> {
