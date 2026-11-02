@@ -11,6 +11,10 @@ export const ANALYSIS_MODEL = "gpt-6.1-sol";
 let client: OpenAI | undefined;
 
 export function getOpenAI(): OpenAI {
-  client ??= new OpenAI({ apiKey: getServerEnv("OPENAI_API_KEY") });
+  // PRD에 따라 실패하면 자동으로 1회만 다시 시도한다.
+  client ??= new OpenAI({
+    apiKey: getServerEnv("OPENAI_API_KEY"),
+    maxRetries: 1,
+  });
   return client;
 }

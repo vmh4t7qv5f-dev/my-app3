@@ -1,6 +1,7 @@
 import { findAudioProblem } from "@/lib/server/audio-check";
 import {
   discardJob,
+  downloadAudio,
   getReportPath,
   isAudioUploaded,
   isJobWaitingForStart,
@@ -22,7 +23,7 @@ export async function POST(
       return Response.json({ error: "upload_incomplete" }, { status: 409 });
     }
 
-    const problem = await findAudioProblem(id);
+    const problem = await findAudioProblem(await downloadAudio(id));
     if (problem) {
       await discardJob(id);
       return Response.json({ error: problem }, { status: 422 });
