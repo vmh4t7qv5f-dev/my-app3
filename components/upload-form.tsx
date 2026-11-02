@@ -277,16 +277,16 @@ export function UploadForm() {
 
       {state.step === "transcribing" && (
         <p role="status" className="text-sm font-medium">
-          음성을 텍스트로 바꾸고 있습니다. 긴 음성은 몇 분 걸릴 수 있습니다.
+          음성을 텍스트로 바꾸고 회의 내용을 분석하고 있습니다. 긴 음성은 몇 분 걸릴 수 있습니다.
         </p>
       )}
 
       {state.step === "done" && (
         <div role="status" className="flex flex-col gap-1 rounded-lg bg-muted p-4">
-          <p className="font-medium">음성 변환까지 끝났습니다.</p>
+          <p className="font-medium">회의 분석까지 끝났습니다.</p>
           <p className="text-sm break-all">{state.reportUrl}</p>
           <p className="text-sm text-muted-foreground">
-            분석과 보고서 화면은 아직 준비 중입니다.
+            보고서 저장과 보고서 화면은 아직 준비 중입니다.
           </p>
         </div>
       )}
@@ -317,7 +317,7 @@ export function UploadForm() {
           : state.step === "uploading"
           ? "업로드 중..."
           : state.step === "transcribing"
-            ? "변환 중..."
+            ? "분석 중..."
             : "분석 시작"}
       </Button>
     </div>

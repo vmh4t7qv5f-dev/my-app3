@@ -1,3 +1,4 @@
+import { analyzeMeeting } from "@/lib/server/analyze";
 import { findAudioProblem } from "@/lib/server/audio-check";
 import {
   discardJob,
@@ -6,11 +7,12 @@ import {
   isAudioUploaded,
   isJobWaitingForStart,
   isValidJobId,
+  markJobAnalyzing,
   markJobTranscribing,
 } from "@/lib/server/jobs";
 import { isTranscriptTooShort, transcribeAudio } from "@/lib/server/transcribe";
 
-// 업로드된 파일을 검사해 변환하고, 내용이 충분하면 고유 링크를 알려 준다.
+// 업로드된 파일을 검사해 변환하고 분석한 뒤 고유 링크를 알려 준다.
 export async function POST(
   _request: Request,
   ctx: RouteContext<"/api/jobs/[id]/start">,
@@ -40,6 +42,13 @@ export async function POST(
     if (isTranscriptTooShort(transcript)) {
       await discardJob(id);
       return Response.json({ error: "too_little_speech" }, { status: 422 });
+    }
+
+    await markJobAnalyzing(id);
+    const analysis = await analyzeMeeting(transcript);
+    if (!analysis) {
+      await discardJob(id);
+      return Response.json({ error: "not_a_meeting" }, { status: 422 });
     }
 
     return Response.json({ reportPath: getReportPath(id) });

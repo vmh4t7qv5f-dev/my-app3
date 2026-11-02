@@ -74,6 +74,14 @@ export async function markJobTranscribing(id: string): Promise<boolean> {
   return data.length > 0;
 }
 
+export async function markJobAnalyzing(id: string): Promise<void> {
+  const { error } = await getSupabase()
+    .from("jobs")
+    .update({ status: "analyzing" })
+    .eq("id", id);
+  if (error) throw new Error("작업 상태를 바꾸지 못했습니다.");
+}
+
 // 검사에 걸린 파일은 분석하지 않으므로 음성과 작업을 바로 지운다.
 export async function discardJob(id: string): Promise<void> {
   const supabase = getSupabase();
