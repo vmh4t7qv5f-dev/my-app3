@@ -2,6 +2,8 @@ import "server-only";
 
 import { randomBytes } from "node:crypto";
 
+import type { Report } from "@/lib/report";
+
 import { AUDIO_BUCKET, getSupabase } from "./supabase";
 
 const JOB_ID_PATTERN = /^[A-Za-z0-9_-]{32}$/;
@@ -82,17 +84,36 @@ export async function markJobAnalyzing(id: string): Promise<void> {
   if (error) throw new Error("작업 상태를 바꾸지 못했습니다.");
 }
 
+async function removeAudio(id: string): Promise<void> {
+  const { error } = await getSupabase()
+    .storage.from(AUDIO_BUCKET)
+    .remove([id]);
+  if (error) throw new Error("음성을 지우지 못했습니다.");
+}
+
 // 검사에 걸린 파일은 분석하지 않으므로 음성과 작업을 바로 지운다.
 export async function discardJob(id: string): Promise<void> {
-  const supabase = getSupabase();
-  const { error: removeError } = await supabase.storage
-    .from(AUDIO_BUCKET)
-    .remove([id]);
-  if (removeError) throw new Error("음성을 지우지 못했습니다.");
+  await removeAudio(id);
 
-  const { error: deleteError } = await supabase
+  const { error } = await getSupabase().from("jobs").delete().eq("id", id);
+  if (error) throw new Error("작업을 지우지 못했습니다.");
+}
+
+// 보고서를 저장한 뒤 음성을 지우고 작업을 완료로 표시한다.
+export async function completeJob(id: string, report: Report): Promise<void> {
+  const supabase = getSupabase();
+  const { error: insertError } = await supabase
+    .from("reports")
+    .insert({ job_id: id, content: report });
+  if (insertError) throw new Error("보고서를 저장하지 못했습니다.");
+
+  // 보고서는 이미 저장됐으므로 음성 삭제가 실패해도 작업을 실패시키지 않는다.
+  // 1회 다시 시도하고, 그래도 남으면 정리 기능이 업로드 후 23시간이 지나 지운다.
+  await removeAudio(id).catch(() => removeAudio(id).catch(() => undefined));
+
+  const { error: updateError } = await supabase
     .from("jobs")
-    .delete()
+    .update({ status: "completed" })
     .eq("id", id);
-  if (deleteError) throw new Error("작업을 지우지 못했습니다.");
+  if (updateError) throw new Error("작업 상태를 바꾸지 못했습니다.");
 }

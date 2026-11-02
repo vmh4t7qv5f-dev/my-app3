@@ -1,6 +1,7 @@
 import { createReport } from "@/lib/server/analyze";
 import { findAudioProblem } from "@/lib/server/audio-check";
 import {
+  completeJob,
   discardJob,
   downloadAudio,
   getReportPath,
@@ -12,7 +13,7 @@ import {
 } from "@/lib/server/jobs";
 import { isTranscriptTooShort, transcribeAudio } from "@/lib/server/transcribe";
 
-// 업로드된 파일을 검사해 변환하고 보고서 내용을 만든 뒤 고유 링크를 알려 준다.
+// 업로드된 파일을 검사해 변환하고 보고서를 만들어 저장한 뒤 고유 링크를 알려 준다.
 export async function POST(
   _request: Request,
   ctx: RouteContext<"/api/jobs/[id]/start">,
@@ -50,6 +51,8 @@ export async function POST(
       await discardJob(id);
       return Response.json({ error: "not_a_meeting" }, { status: 422 });
     }
+
+    await completeJob(id, report);
 
     return Response.json({ reportPath: getReportPath(id) });
   } catch {
