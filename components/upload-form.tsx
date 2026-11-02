@@ -25,7 +25,7 @@ type UploadState =
   | { step: "idle" }
   | { step: "compressing"; percent: number }
   | { step: "uploading"; percent: number }
-  | { step: "transcribing" };
+  | { step: "checking" };
 
 const DURATION_READ_TIMEOUT_MS = 10_000;
 
@@ -123,7 +123,7 @@ export function UploadForm() {
   const isUploading =
     state.step === "compressing" ||
     state.step === "uploading" ||
-    state.step === "transcribing";
+    state.step === "checking";
 
   async function selectFiles(files: FileList | null) {
     if (!files || files.length === 0 || isUploading) return;
@@ -178,7 +178,7 @@ export function UploadForm() {
         setState({ step: "uploading", percent }),
       );
 
-      setState({ step: "transcribing" });
+      setState({ step: "checking" });
       const started = await fetch(`/api/jobs/${job.id}/start`, {
         method: "POST",
       });
@@ -272,9 +272,9 @@ export function UploadForm() {
         </Progress>
       )}
 
-      {state.step === "transcribing" && (
+      {state.step === "checking" && (
         <p role="status" className="text-sm font-medium">
-          음성을 텍스트로 바꾸고 회의 내용을 분석하고 있습니다. 긴 음성은 몇 분 걸릴 수 있습니다.
+          올린 파일을 확인하고 있습니다.
         </p>
       )}
 
@@ -303,8 +303,8 @@ export function UploadForm() {
           ? "파일 줄이는 중..."
           : state.step === "uploading"
           ? "업로드 중..."
-          : state.step === "transcribing"
-            ? "분석 중..."
+          : state.step === "checking"
+            ? "파일 확인 중..."
             : "분석 시작"}
       </Button>
     </div>

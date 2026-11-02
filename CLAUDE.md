@@ -72,7 +72,7 @@ npm run lint   # ESLint
 ## 현재 상태
 
 - 진행 단계: 1단계(개발 단위 1~5번) 완료, 6번(진행 상태와 예외 처리) 시작 전. 단위가 끝날 때마다 이 줄을 고친다.
-- 화면은 업로드 화면(`/`)과 보고서 화면(`/r/[id]`)이 있다. 지금은 업로드 화면이 처리 끝까지 기다리며, 화면과 분리한 서버 처리는 아직 없다. Supabase 테이블과 `audio` 저장 공간을 만들었고, 서버 전용 코드는 `lib/server/`에 있다.
+- 화면은 업로드 화면(`/`)과 보고서 화면(`/r/[id]`)이 있다. 처리는 화면과 분리되어 서버에서 변환과 분석 두 단계로 실행된다(`lib/server/pipeline.ts`). Supabase 테이블과 `audio` 저장 공간을 만들었고, 서버 전용 코드는 `lib/server/`에 있다.
 - Git 저장소이며 기본 브랜치는 `main`이다. `trash-can/`과 `.bkit/`(플러그인 작업 기록)은 `.gitignore`로 제외한다.
 - `@/*`는 프로젝트 루트를 가리키고, `src/` 폴더는 쓰지 않는다.
 - `next.config.ts`에서 `cacheComponents`와 `partialPrefetching`이 켜져 있으며, Tailwind는 `@tailwindcss/turbopack` 로더로 처리한다.

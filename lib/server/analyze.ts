@@ -13,7 +13,6 @@ import {
   meetingAnalysisDraftSchema,
   type Alternatives,
   type MeetingAnalysis,
-  type Report,
 } from "@/lib/report";
 
 import { ANALYSIS_MODEL, getOpenAI } from "./openai";
@@ -131,14 +130,4 @@ export async function generateAlternatives(
     });
     return completion.choices[0]?.message.parsed ?? null;
   });
-}
-
-// 분석과 대안을 합쳐 보고서를 만든다. 회의가 아니면 null을 돌려준다.
-export async function createReport(
-  transcript: Transcript,
-): Promise<Report | null> {
-  const analysis = await analyzeMeeting(transcript);
-  if (!analysis) return null;
-  const { alternatives } = await generateAlternatives(transcript, analysis);
-  return { ...analysis, alternatives };
 }

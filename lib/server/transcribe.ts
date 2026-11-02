@@ -1,19 +1,24 @@
 import "server-only";
 
 import { toFile } from "openai";
+import { z } from "zod";
 
 import { getOpenAI, TRANSCRIPTION_MODEL } from "./openai";
 
-export type TranscriptSegment = {
-  startSeconds: number;
-  endSeconds: number;
-  text: string;
-};
+// 변환 단계에서 분석 단계로 요청에 담아 넘기므로 받는 쪽에서 형식을 검사한다.
+export const transcriptSchema = z.object({
+  text: z.string(),
+  segments: z.array(
+    z.object({
+      startSeconds: z.number(),
+      endSeconds: z.number(),
+      text: z.string(),
+    }),
+  ),
+});
 
-export type Transcript = {
-  text: string;
-  segments: TranscriptSegment[];
-};
+export type Transcript = z.infer<typeof transcriptSchema>;
+export type TranscriptSegment = Transcript["segments"][number];
 
 const MIN_TRANSCRIPT_CHARACTERS = 300;
 

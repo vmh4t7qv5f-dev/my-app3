@@ -1,6 +1,6 @@
 import "server-only";
 
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 import { reportSchema, type Report } from "@/lib/report";
 
@@ -64,23 +64,67 @@ export async function downloadAudio(id: string): Promise<Blob> {
   return data;
 }
 
-// 같은 음성을 두 번 변환해 비용을 쓰지 않도록 대기 중인 작업만 변환 상태로 바꾼다.
-export async function markJobTranscribing(id: string): Promise<boolean> {
+function hashRunToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+// 같은 음성을 두 번 변환해 비용을 쓰지 않도록 대기 중인 작업만 시작한다.
+// 분석 단계를 부를 때 쓸 일회용 인증값을 돌려주며, DB에는 해시만 남긴다.
+export async function startJob(id: string): Promise<string | null> {
+  const token = randomBytes(32).toString("base64url");
   const { data, error } = await getSupabase()
     .from("jobs")
-    .update({ status: "transcribing" })
+    .update({ status: "transcribing", run_token_hash: hashRunToken(token) })
     .eq("id", id)
     .eq("status", "pending")
+    .select("id");
+  if (error) throw new Error("작업 상태를 바꾸지 못했습니다.");
+  return data.length > 0 ? token : null;
+}
+
+// 인증값이 맞으면 분석 상태로 바꾸고 인증값을 없앤다. 같은 값은 다시 쓸 수 없다.
+export async function consumeRunToken(
+  id: string,
+  token: string,
+): Promise<boolean> {
+  const { data, error } = await getSupabase()
+    .from("jobs")
+    .update({ status: "analyzing", run_token_hash: null })
+    .eq("id", id)
+    .eq("status", "transcribing")
+    .eq("run_token_hash", hashRunToken(token))
     .select("id");
   if (error) throw new Error("작업 상태를 바꾸지 못했습니다.");
   return data.length > 0;
 }
 
-export async function markJobAnalyzing(id: string): Promise<void> {
+export async function markJobWriting(id: string): Promise<void> {
   const { error } = await getSupabase()
     .from("jobs")
-    .update({ status: "analyzing" })
+    .update({ status: "writing" })
     .eq("id", id);
+  if (error) throw new Error("작업 상태를 바꾸지 못했습니다.");
+}
+
+export type JobState = { status: string; errorCode: string | null };
+
+export async function getJobState(id: string): Promise<JobState | null> {
+  const { data, error } = await getSupabase()
+    .from("jobs")
+    .select("status, error_code")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error("작업을 확인하지 못했습니다.");
+  return data && { status: data.status, errorCode: data.error_code };
+}
+
+// 실패한 작업은 오류 코드만 남기고 음성을 지운다. 음성 삭제가 실패해도 정리 기능이 나중에 지운다.
+export async function failJob(id: string, errorCode: string): Promise<void> {
+  const { error } = await getSupabase()
+    .from("jobs")
+    .update({ status: "failed", error_code: errorCode, run_token_hash: null })
+    .eq("id", id);
+  await removeAudio(id).catch(() => undefined);
   if (error) throw new Error("작업 상태를 바꾸지 못했습니다.");
 }
 

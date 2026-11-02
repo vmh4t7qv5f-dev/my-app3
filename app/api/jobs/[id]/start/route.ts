@@ -1,21 +1,22 @@
-import { createReport } from "@/lib/server/analyze";
+import { after } from "next/server";
+
 import { findAudioProblem } from "@/lib/server/audio-check";
 import {
-  completeJob,
   discardJob,
   downloadAudio,
   getReportPath,
   isAudioUploaded,
   isJobWaitingForStart,
   isValidJobId,
-  markJobAnalyzing,
-  markJobTranscribing,
+  startJob,
 } from "@/lib/server/jobs";
-import { isTranscriptTooShort, transcribeAudio } from "@/lib/server/transcribe";
+import { runTranscribeStage } from "@/lib/server/pipeline";
 
-// 업로드된 파일을 검사해 변환하고 보고서를 만들어 저장한 뒤 고유 링크를 알려 준다.
+export const maxDuration = 300;
+
+// 업로드된 파일을 검사해 작업을 시작하고 바로 고유 링크를 알려 준다. 처리는 서버에서 계속된다.
 export async function POST(
-  _request: Request,
+  request: Request,
   ctx: RouteContext<"/api/jobs/[id]/start">,
 ) {
   const { id } = await ctx.params;
@@ -35,25 +36,13 @@ export async function POST(
       return Response.json({ error: problem }, { status: 422 });
     }
 
-    if (!(await markJobTranscribing(id))) {
+    const runToken = await startJob(id);
+    if (!runToken) {
       return Response.json({ error: "job_not_found" }, { status: 404 });
     }
 
-    const transcript = await transcribeAudio(audio);
-    if (isTranscriptTooShort(transcript)) {
-      await discardJob(id);
-      return Response.json({ error: "too_little_speech" }, { status: 422 });
-    }
-
-    await markJobAnalyzing(id);
-    const report = await createReport(transcript);
-    if (!report) {
-      await discardJob(id);
-      return Response.json({ error: "not_a_meeting" }, { status: 422 });
-    }
-
-    await completeJob(id, report);
-
+    const { origin } = new URL(request.url);
+    after(() => runTranscribeStage(id, audio, runToken, origin));
     return Response.json({ reportPath: getReportPath(id) });
   } catch {
     return Response.json({ error: "job_start_failed" }, { status: 500 });
