@@ -8,18 +8,21 @@ import {
   ProgressLabel,
   ProgressValue,
 } from "@/components/ui/progress";
+import { compressAudio } from "@/lib/compress-audio";
 import {
   CONTENT_TYPES_BY_EXTENSION,
   getFileExtension,
+  isTooLong,
   isUploadErrorCode,
-  MAX_DURATION_SECONDS,
   MAX_FILE_BYTES,
+  MAX_ORIGINAL_FILE_BYTES,
   UPLOAD_ERROR_MESSAGES,
   type UploadErrorCode,
 } from "@/lib/upload-rules";
 
 type UploadState =
   | { step: "idle" }
+  | { step: "compressing"; percent: number }
   | { step: "uploading"; percent: number }
   | { step: "transcribing" }
   | { step: "done"; reportUrl: string };
@@ -60,12 +63,28 @@ async function findFileProblem(file: File): Promise<UploadErrorCode | null> {
     return "unsupported_format";
   }
   if (file.size === 0) return "empty_file";
-  if (file.size > MAX_FILE_BYTES) return "too_large";
+  if (file.size > MAX_ORIGINAL_FILE_BYTES) return "original_too_large";
 
   const duration = await readDuration(file);
-  return duration !== null && duration > MAX_DURATION_SECONDS
-    ? "too_long"
-    : null;
+  return duration !== null && isTooLong(duration) ? "too_long" : null;
+}
+
+// 작은 파일은 음질을 지키도록 그대로 올리고, 25MB가 넘을 때만 줄인다.
+async function prepareUpload(
+  file: File,
+  onProgress: (percent: number) => void,
+): Promise<File> {
+  if (file.size <= MAX_FILE_BYTES) return file;
+
+  let compressed: File;
+  try {
+    compressed = await compressAudio(file, onProgress);
+  } catch {
+    throw new Error("compression_failed");
+  }
+  // 길이를 미리 읽지 못한 파일은 줄인 뒤에도 크면 60분을 넘는 음성이다.
+  if (compressed.size > MAX_FILE_BYTES) throw new Error("too_long");
+  return compressed;
 }
 
 // 진행률을 받으려면 fetch가 아니라 XMLHttpRequest를 써야 한다.
@@ -101,7 +120,9 @@ export function UploadForm() {
   const latestSelection = useRef(0);
 
   const isUploading =
-    state.step === "uploading" || state.step === "transcribing";
+    state.step === "compressing" ||
+    state.step === "uploading" ||
+    state.step === "transcribing";
 
   async function selectFiles(files: FileList | null) {
     if (!files || files.length === 0 || isUploading) return;
@@ -140,14 +161,19 @@ export function UploadForm() {
   async function handleStart() {
     if (!file || isUploading) return;
     setError(null);
-    setState({ step: "uploading", percent: 0 });
+    setState({ step: "compressing", percent: 0 });
 
     try {
+      const uploadable = await prepareUpload(file, (percent) =>
+        setState({ step: "compressing", percent }),
+      );
+
+      setState({ step: "uploading", percent: 0 });
       const created = await fetch("/api/jobs", { method: "POST" });
       if (!created.ok) throw new Error("job_create_failed");
       const job: { id: string; uploadUrl: string } = await created.json();
 
-      await uploadFile(job.uploadUrl, file, (percent) =>
+      await uploadFile(job.uploadUrl, uploadable, (percent) =>
         setState({ step: "uploading", percent }),
       );
 
@@ -211,6 +237,11 @@ export function UploadForm() {
             <span className="text-sm text-muted-foreground">
               {formatSize(file.size)} · 다른 파일을 고르려면 다시 누르세요
             </span>
+            {file.size > MAX_FILE_BYTES && (
+              <span className="text-sm text-muted-foreground">
+                25MB가 넘어 이 브라우저에서 자동으로 줄인 뒤 올립니다
+              </span>
+            )}
           </>
         ) : (
           <>
@@ -218,7 +249,7 @@ export function UploadForm() {
               파일을 끌어다 놓거나 눌러서 선택하세요
             </span>
             <span className="text-sm text-muted-foreground">
-              mp3, m4a, wav 1개 / 최대 60분, 25MB
+              mp3, m4a, wav 1개 / 최대 60분 / 25MB가 넘으면 자동으로 줄여서 올립니다
             </span>
           </>
         )}
@@ -228,6 +259,13 @@ export function UploadForm() {
         <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
+      )}
+
+      {state.step === "compressing" && (
+        <Progress value={state.percent}>
+          <ProgressLabel>파일 줄이는 중 (창을 닫지 마세요)</ProgressLabel>
+          <ProgressValue />
+        </Progress>
       )}
 
       {state.step === "uploading" && (
@@ -274,7 +312,9 @@ export function UploadForm() {
         disabled={!file || isUploading}
         onClick={handleStart}
       >
-        {state.step === "uploading"
+        {state.step === "compressing"
+          ? "파일 줄이는 중..."
+          : state.step === "uploading"
           ? "업로드 중..."
           : state.step === "transcribing"
             ? "변환 중..."

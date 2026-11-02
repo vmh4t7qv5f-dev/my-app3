@@ -3,7 +3,7 @@ import "server-only";
 import { parseBuffer } from "music-metadata";
 
 import {
-  MAX_DURATION_SECONDS,
+  isTooLong,
   MAX_FILE_BYTES,
   type UploadErrorCode,
 } from "@/lib/upload-rules";
@@ -30,7 +30,7 @@ export async function findAudioProblem(
     }
     if (format.hasVideo) return "unsupported_format";
     if (!format.duration) return "damaged_file";
-    if (format.duration > MAX_DURATION_SECONDS) return "too_long";
+    if (isTooLong(format.duration)) return "too_long";
     return null;
   } catch {
     return "damaged_file";

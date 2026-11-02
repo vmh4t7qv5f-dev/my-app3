@@ -1,6 +1,10 @@
 // 브라우저와 서버가 함께 쓰는 업로드 기준과 안내 문구다. 비밀 값을 넣지 않는다.
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
-export const MAX_DURATION_SECONDS = 60 * 60;
+const MAX_DURATION_SECONDS = 60 * 60;
+// 압축하면 끝에 아주 짧은 여백이 붙으므로 정확히 60분인 음성이 걸리지 않도록 1초를 봐준다.
+const DURATION_TOLERANCE_SECONDS = 1;
+// 이보다 큰 원본은 브라우저가 줄이다 멈출 수 있어 받지 않는다.
+export const MAX_ORIGINAL_FILE_BYTES = 1024 * 1024 * 1024;
 
 export const CONTENT_TYPES_BY_EXTENSION: Record<string, string> = {
   mp3: "audio/mpeg",
@@ -14,7 +18,9 @@ export type UploadErrorCode =
   | "too_long"
   | "empty_file"
   | "damaged_file"
-  | "too_little_speech";
+  | "too_little_speech"
+  | "original_too_large"
+  | "compression_failed";
 
 export const UPLOAD_ERROR_MESSAGES: Record<UploadErrorCode, string> = {
   unsupported_format:
@@ -29,7 +35,15 @@ export const UPLOAD_ERROR_MESSAGES: Record<UploadErrorCode, string> = {
     "파일을 읽을 수 없습니다. 손상되었거나 음성 파일이 아닐 수 있습니다. 원본을 다시 저장한 뒤 올려 주세요.",
   too_little_speech:
     "음성에서 알아들은 내용이 300자 미만이라 분석할 수 없습니다. 회의 내용이 제대로 녹음되었는지 음성 파일을 확인하고 다시 올려 주세요.",
+  original_too_large:
+    "파일이 1GB를 넘어 자동으로 줄일 수 없습니다. 음성 변환 프로그램에서 mp3, 모노(1채널), 48kbps로 저장한 뒤 다시 올려 주세요.",
+  compression_failed:
+    "파일을 자동으로 줄이지 못했습니다. 음성 변환 프로그램에서 mp3, 모노(1채널), 48kbps로 저장한 뒤 다시 올려 주세요.",
 };
+
+export function isTooLong(durationSeconds: number): boolean {
+  return durationSeconds > MAX_DURATION_SECONDS + DURATION_TOLERANCE_SECONDS;
+}
 
 export function getFileExtension(fileName: string): string {
   return fileName.includes(".")
