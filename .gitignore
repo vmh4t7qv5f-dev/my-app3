@@ -43,3 +43,6 @@ next-env.d.ts
 # 삭제 대기 파일과 플러그인 작업 기록
 /trash-can/
 /.bkit/
+
+# 용량이 큰 배포 시험용 음성
+/test-audio/long-meeting-60min.wav
