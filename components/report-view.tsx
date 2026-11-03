@@ -39,7 +39,7 @@ function Quotes({ quotes }: { quotes: Quote[] }) {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-3">
+    <section className="paper-card reveal-card flex flex-col gap-3 p-5 sm:p-6">
       <h3 className="text-xl font-semibold">{title}</h3>
       {children}
     </section>
@@ -107,13 +107,13 @@ export function ReportView({ report }: { report: Report }) {
     <article className="flex flex-col gap-10">
       <p
         role="note"
-        className="rounded-lg border border-border bg-muted p-4 font-medium"
+        className="paper-card border-l-4 border-l-primary p-4 font-medium"
       >
         AI 분석은 틀릴 수 있습니다. 최종 판단은 반드시 사람이 해 주세요.
       </p>
 
       <div className="flex flex-col gap-8">
-        <h2 className="text-2xl font-bold">{source} 내용</h2>
+        <h2 className="text-2xl font-semibold">{source} 내용</h2>
 
         <Section title={`${source}에서 결정된 사항`}>
           {report.decisions.length === 0 ? (
@@ -194,9 +194,9 @@ export function ReportView({ report }: { report: Report }) {
         </Section>
       </div>
 
-      <section className="flex flex-col gap-4 rounded-lg border-2 border-violet-400 bg-violet-50 p-4 sm:p-6 dark:bg-violet-950">
+      <section className="glass-card glass-card--violet flex flex-col gap-4 p-4 sm:p-6">
         <div>
-          <h2 className="text-2xl font-bold">AI 제안</h2>
+          <h2 className="text-2xl font-semibold">AI 제안</h2>
           <p className="mt-1 text-sm">
             {source}에서 나온 내용이 아니라 AI가 제안하는 새로운 대안과 추천
             결론입니다.
@@ -205,7 +205,7 @@ export function ReportView({ report }: { report: Report }) {
         {report.alternatives.map((alternative, index) => (
           <div
             key={index}
-            className="flex flex-col gap-3 rounded-lg bg-background p-4"
+            className="card-inset flex flex-col gap-3 p-4"
           >
             <h3 className="font-semibold">
               <Label>AI 제안</Label>
@@ -224,7 +224,7 @@ export function ReportView({ report }: { report: Report }) {
           </div>
         ))}
         {report.finalConclusion && (
-          <div className="flex flex-col gap-3 rounded-lg border border-violet-400 bg-background p-4">
+          <div className="card-inset flex flex-col gap-3 border-2 border-violet-400 p-4">
             <h3 className="font-semibold">
               <Label>AI 제안</Label>
               AI 추천 결론

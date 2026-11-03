@@ -1,8 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type DragEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type DragEvent,
+} from "react";
 
+import { DotText } from "@/components/dot-text";
 import { Button } from "@/components/ui/button";
 import {
   Progress,
@@ -233,6 +240,11 @@ export function UploadForm() {
 
   return (
     <div className="flex flex-col gap-6">
+      <div className="grid gap-[clamp(8px,1.5vw,23px)] lg:grid-cols-3">
+      <div
+        className="glass-card glass-card--rose reveal-card flex min-h-80 flex-col gap-4 p-5"
+        style={{ "--reveal-delay": "0.25s" } as CSSProperties}
+      >
       <label
         onDragOver={(event) => {
           event.preventDefault();
@@ -240,8 +252,8 @@ export function UploadForm() {
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        className={`flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed px-4 py-10 text-center transition-colors focus-within:border-ring hover:bg-muted ${
-          isDragging ? "border-ring bg-muted" : "border-border"
+        className={`flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-[10px] border-2 border-dashed px-4 py-10 text-center transition-colors focus-within:border-white hover:bg-white/10 ${
+          isDragging ? "border-white bg-white/10" : "border-white/50"
         }`}
       >
         <input
@@ -259,11 +271,11 @@ export function UploadForm() {
         ) : file ? (
           <>
             <span className="font-medium break-all">{file.name}</span>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-white/90">
               {formatSize(file.size)} · 다른 파일을 고르려면 다시 누르세요
             </span>
             {file.size > MAX_FILE_BYTES && (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-white/90">
                 25MB가 넘어 이 브라우저에서 자동으로 줄인 뒤 올립니다
               </span>
             )}
@@ -273,7 +285,7 @@ export function UploadForm() {
             <span className="font-medium">
               파일을 끌어다 놓거나 눌러서 선택하세요
             </span>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-white/90">
               mp3, m4a, wav 1개 / 최대 60분 / 25MB가 넘으면 자동으로 줄여서 올립니다
             </span>
           </>
@@ -281,45 +293,53 @@ export function UploadForm() {
       </label>
 
       {error && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="card-inset text-sm text-destructive">
           {error}
         </p>
       )}
 
       {state.step === "compressing" && (
-        <Progress value={state.percent}>
-          <ProgressLabel>파일 줄이는 중 (창을 닫지 마세요)</ProgressLabel>
-          <ProgressValue />
-        </Progress>
+        <div className="card-inset">
+          <Progress value={state.percent}>
+            <ProgressLabel>파일 줄이는 중 (창을 닫지 마세요)</ProgressLabel>
+            <ProgressValue />
+          </Progress>
+        </div>
       )}
 
       {state.step === "uploading" && (
-        <Progress value={state.percent}>
-          <ProgressLabel>업로드 중</ProgressLabel>
-          <ProgressValue />
-        </Progress>
+        <div className="card-inset">
+          <Progress value={state.percent}>
+            <ProgressLabel>업로드 중</ProgressLabel>
+            <ProgressValue />
+          </Progress>
+        </div>
       )}
 
       {state.step === "checking" && (
-        <p role="status" className="text-sm font-medium">
+        <p role="status" className="card-inset text-sm font-medium">
           올린 파일을 확인하고 있습니다.
         </p>
       )}
+      </div>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="recipient-emails" className="text-sm font-medium">
+      <div
+        className="glass-card glass-card--violet reveal-card flex flex-col gap-3 p-5"
+        style={{ "--reveal-delay": "0.37s" } as CSSProperties}
+      >
+        <label htmlFor="recipient-emails" className="font-semibold">
           보고서를 메일로 받을 사람 (선택, 최대 {MAX_RECIPIENTS}명)
         </label>
         <textarea
           id="recipient-emails"
-          rows={2}
+          rows={4}
           value={recipientText}
           disabled={isUploading}
           onChange={(event) => setRecipientText(event.target.value)}
           placeholder="a@example.com, b@example.com"
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          className="rounded-[10px] border border-white/60 bg-white/95 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
         />
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm leading-relaxed text-white/90">
           분석이 끝나면 핵심 요약과 보고서 링크, 보고서 PDF를 자동으로 보냅니다. 창을
           닫아도 발송됩니다.
         </p>
@@ -337,11 +357,15 @@ export function UploadForm() {
         )}
       </div>
 
-      <section aria-label="업로드 전 안내" className="text-sm text-muted-foreground">
-        <h2 className="mb-2 font-medium text-foreground">
+      <section
+        aria-label="업로드 전 안내"
+        className="glass-card glass-card--orange reveal-card p-5 text-sm leading-relaxed"
+        style={{ "--reveal-delay": "0.49s" } as CSSProperties}
+      >
+        <h2 className="mb-3 text-base font-semibold">
           올리기 전에 확인해 주세요
         </h2>
-        <ul className="flex list-disc flex-col gap-1 pl-5">
+        <ul className="flex list-disc flex-col gap-1.5 pl-5">
           <li>음성과 변환 텍스트는 분석을 위해 OpenAI로 전송됩니다.</li>
           <li>음성은 Supabase에 잠시 보관한 뒤 분석이 끝나면 바로 삭제합니다.</li>
           <li>보고서는 Supabase에 저장되며 30일 뒤 자동으로 삭제됩니다.</li>
@@ -356,21 +380,28 @@ export function UploadForm() {
           </li>
         </ul>
       </section>
+      </div>
 
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
       {remainingToday === 0 && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-sm text-destructive sm:mr-auto">
           {UPLOAD_ERROR_MESSAGES.daily_limit}
         </p>
       )}
       {remainingToday !== null && remainingToday > 0 && (
-        <p className="text-right text-sm text-muted-foreground">
-          오늘 남은 처리: {remainingToday}건
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          오늘 남은 처리:
+          <DotText
+            text={String(remainingToday)}
+            className="h-5 text-primary"
+          />
+          건
         </p>
       )}
 
       <Button
         size="lg"
-        className="w-full"
+        className="w-full sm:w-64"
         disabled={!file || isUploading || remainingToday === 0}
         onClick={handleStart}
       >
@@ -382,6 +413,7 @@ export function UploadForm() {
             ? "파일 확인 중..."
             : "분석 시작"}
       </Button>
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { DeleteReportButton } from "@/components/delete-report-button";
+import { DotText } from "@/components/dot-text";
 import { JobWatcher } from "@/components/job-watcher";
 import { ReportLinkBox } from "@/components/report-link-box";
 import { ReportView } from "@/components/report-view";
@@ -42,8 +43,11 @@ function JobProgress({ id, status }: { id: string; status: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div role="status" className="flex flex-col gap-3">
-        <p className="font-medium">보고서를 만들고 있습니다.</p>
+      <div
+        role="status"
+        className="glass-card glass-card--rose reveal-card flex flex-col gap-3 p-5"
+      >
+        <p className="font-semibold">보고서를 만들고 있습니다.</p>
         <ol className="flex flex-col gap-2">
           {PROGRESS_STEPS.map((step, index) => (
             <li
@@ -52,7 +56,7 @@ function JobProgress({ id, status }: { id: string; status: string }) {
               className={
                 index === currentIndex
                   ? "font-semibold"
-                  : "text-muted-foreground"
+                  : "text-white/85"
               }
             >
               {index + 1}. {step.label}
@@ -61,7 +65,7 @@ function JobProgress({ id, status }: { id: string; status: string }) {
             </li>
           ))}
         </ol>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm leading-relaxed text-white/90">
           창을 닫아도 서버에서 계속 진행됩니다. 이 링크로 돌아오면 현재 상태를 볼 수
           있고, 끝나면 화면이 저절로 바뀝니다. 긴 음성은 10분 정도 걸릴 수 있습니다.
         </p>
@@ -87,7 +91,7 @@ async function ReportContent({ params }: { params: Promise<{ id: string }> }) {
     (job.status === "completed" && !report)
   ) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="paper-card reveal-card flex flex-col gap-4 p-5">
         <p>{NOT_FOUND_MESSAGE}</p>
         <UploadLink>새 파일 올리기</UploadLink>
       </div>
@@ -96,7 +100,7 @@ async function ReportContent({ params }: { params: Promise<{ id: string }> }) {
 
   if (job.status === "failed") {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="paper-card reveal-card flex flex-col gap-4 p-5">
         <p role="alert">
           {isUploadErrorCode(job.errorCode)
             ? UPLOAD_ERROR_MESSAGES[job.errorCode]
@@ -139,7 +143,12 @@ async function ReportContent({ params }: { params: Promise<{ id: string }> }) {
 export default function ReportPage({ params }: PageProps<"/r/[id]">) {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-12">
-      <h1 className="text-3xl font-semibold">의사결정 보고서</h1>
+      <header className="reveal-text flex flex-col gap-3">
+        <DotText text="DecisionFlow" className="h-6 self-start text-primary" />
+        <h1 className="text-[clamp(24px,3.1vw,40px)] leading-[1.223] font-normal tracking-[0.015em] text-[#202020]">
+          의사결정 보고서
+        </h1>
+      </header>
       <Suspense fallback={<p>보고서를 불러오고 있습니다...</p>}>
         <ReportContent params={params} />
       </Suspense>

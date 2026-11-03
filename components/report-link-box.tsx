@@ -26,7 +26,7 @@ export function ReportLinkBox() {
   }
 
   return (
-    <div className="flex flex-col items-start gap-2 rounded-lg border border-border p-4 text-sm">
+    <div className="flex flex-col items-start gap-2 paper-card p-4 text-sm">
       <Button variant="outline" onClick={copyLink} aria-live="polite">
         {COPY_LABELS[copyState]}
       </Button>
