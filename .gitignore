@@ -46,3 +46,4 @@ next-env.d.ts
 
 # 용량이 큰 배포 시험용 음성
 /test-audio/long-meeting-60min.wav
+/test-audio/meeting-60min.wav
