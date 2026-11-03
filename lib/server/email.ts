@@ -74,6 +74,8 @@ function buildEmailBody(
   );
   const direction = report.finalConclusion?.direction ?? "";
 
+  const summary = report.summary ?? [];
+  const summaryTitle = "[AI 요약] 한눈에 보기";
   const decisionsTitle = `${source}에서 결정된 사항`;
   const unresolvedTitle = "미해결 문제";
   const conclusionTitle = "[AI 제안] AI 추천 결론";
@@ -81,24 +83,30 @@ function buildEmailBody(
 
   const text = [
     AI_NOTICE,
+    ...(summary.length > 0
+      ? [`■ ${summaryTitle}\n${toTextList(summary, "")}`]
+      : []),
+    `■ ${conclusionTitle}\n${conclusionNotice}\n${direction}\n추천 이유\n${toTextList(reasons, "")}`,
     `■ ${decisionsTitle}\n${toTextList(decisions, "합의된 결론 없음")}`,
     `■ ${unresolvedTitle}\n${toTextList(unresolved, "미해결 문제 없음")}`,
-    `■ ${conclusionTitle}\n${conclusionNotice}\n${direction}\n추천 이유\n${toTextList(reasons, "")}`,
     ...(hasPdf ? [PDF_NOTICE] : []),
     `전체 보고서 보기: ${reportUrl}\n${LINK_NOTICE}`,
   ].join("\n\n");
 
   const html = [
     `<p><strong>${escapeHtml(AI_NOTICE)}</strong></p>`,
-    `<h2>${escapeHtml(decisionsTitle)}</h2>`,
-    toHtmlList(decisions, "합의된 결론 없음"),
-    `<h2>${escapeHtml(unresolvedTitle)}</h2>`,
-    toHtmlList(unresolved, "미해결 문제 없음"),
+    summary.length > 0
+      ? `<h2>${escapeHtml(summaryTitle)}</h2>${toHtmlList(summary, "")}`
+      : "",
     `<h2>${escapeHtml(conclusionTitle)}</h2>`,
     `<p>${escapeHtml(conclusionNotice)}</p>`,
     `<p>${escapeHtml(direction)}</p>`,
     `<p>추천 이유</p>`,
     toHtmlList(reasons, ""),
+    `<h2>${escapeHtml(decisionsTitle)}</h2>`,
+    toHtmlList(decisions, "합의된 결론 없음"),
+    `<h2>${escapeHtml(unresolvedTitle)}</h2>`,
+    toHtmlList(unresolved, "미해결 문제 없음"),
     hasPdf ? `<p>${escapeHtml(PDF_NOTICE)}</p>` : "",
     `<p><a href="${escapeHtml(reportUrl)}">전체 보고서 보기</a></p>`,
     `<p>${escapeHtml(LINK_NOTICE)}</p>`,

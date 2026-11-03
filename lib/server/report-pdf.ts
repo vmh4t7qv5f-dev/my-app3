@@ -96,6 +96,28 @@ export function buildReportPdf(report: Report): Promise<Buffer> {
       { size: 9.5, color: MUTED_COLOR },
     );
 
+    if (report.summary) {
+      doc.y += 8;
+      itemTitle("[AI 요약] 한눈에 보기", AI_COLOR);
+      write(`${source} 내용을 AI가 정리했습니다.`, {
+        size: 9.5,
+        color: MUTED_COLOR,
+      });
+      bullets(report.summary);
+    }
+
+    if (report.finalConclusion) {
+      doc.y += 8;
+      itemTitle("[AI 제안] AI 추천 결론", AI_COLOR);
+      write(`${source}에서 합의된 결론이 아니라 AI가 추천하는 방향입니다.`, {
+        size: 9.5,
+        color: MUTED_COLOR,
+      });
+      write(report.finalConclusion.direction, { font: BOLD_FONT });
+      label("추천 이유");
+      bullets(report.finalConclusion.reasons.map(formatPoint));
+    }
+
     sectionTitle(`${source}에서 결정된 사항`);
     if (report.decisions.length === 0) write("합의된 결론 없음");
     else bullets(report.decisions.map((decision) => decision.content));
@@ -107,20 +129,12 @@ export function buildReportPdf(report: Report): Promise<Buffer> {
       write(`이유: ${issue.reason}`, { gap: 8 });
     }
 
-    sectionTitle("주요 사안별 문제점과 핵심 쟁점");
-    for (const topic of report.topics) {
-      itemTitle(topic.title);
+    sectionTitle("사안별 문제점과 해결 방안");
+    report.topics.forEach((topic, index) => {
+      itemTitle(`${index + 1}. ${topic.title}`);
       write(`문제점: ${topic.problem}`);
       bullets(topic.issues.map((issue) => `쟁점: ${issue.content}`));
-    }
-
-    sectionTitle("논의된 해결 방안과 장단점 비교");
-    const topicsWithSolutions = report.topics.filter(
-      (topic) => topic.solutions.length > 0,
-    );
-    if (topicsWithSolutions.length === 0) write("논의된 해결 방안 없음");
-    for (const topic of topicsWithSolutions) {
-      itemTitle(topic.title);
+      if (topic.solutions.length === 0) write("논의된 해결 방안 없음");
       for (const solution of topic.solutions) {
         write(solution.name, { font: BOLD_FONT });
         label("장점");
@@ -128,17 +142,23 @@ export function buildReportPdf(report: Report): Promise<Buffer> {
         label("단점");
         bullets(solution.cons.map(formatProsConsPoint));
       }
-    }
+      doc.y += 6;
+    });
 
     // 결정 사항과 섞이지 않도록 AI 제안은 새 쪽에서 색을 달리해 시작한다.
     doc.addPage();
     doc.rect(MARGIN, doc.y, width, 54).fill(AI_BACKGROUND);
     doc.y += 8;
-    write("AI 제안", { font: BOLD_FONT, size: 16, color: AI_COLOR, gap: 2 });
-    write(
-      `${source}에서 나온 내용이 아니라 AI가 제안하는 새로운 대안과 추천 결론입니다.`,
-      { size: 9.5, gap: 14 },
-    );
+    write("AI 제안: 새로운 대안", {
+      font: BOLD_FONT,
+      size: 16,
+      color: AI_COLOR,
+      gap: 2,
+    });
+    write(`${source}에서 나온 내용이 아니라 AI가 제안하는 새로운 대안입니다.`, {
+      size: 9.5,
+      gap: 14,
+    });
 
     for (const alternative of report.alternatives) {
       itemTitle(`[AI 제안] ${alternative.title}`, AI_COLOR);
@@ -150,17 +170,6 @@ export function buildReportPdf(report: Report): Promise<Buffer> {
       label("실행 전략");
       bullets(alternative.executionSteps.map(formatPoint));
       doc.y += 6;
-    }
-
-    if (report.finalConclusion) {
-      itemTitle("[AI 제안] AI 추천 결론", AI_COLOR);
-      write(`${source}에서 합의된 결론이 아니라 AI가 추천하는 방향입니다.`, {
-        size: 9.5,
-        color: MUTED_COLOR,
-      });
-      write(report.finalConclusion.direction, { font: BOLD_FONT });
-      label("추천 이유");
-      bullets(report.finalConclusion.reasons.map(formatPoint));
     }
 
     const { start, count } = doc.bufferedPageRange();

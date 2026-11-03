@@ -6,6 +6,7 @@ const requiredText = z.string().trim().min(1);
 
 export const MAX_TOPICS = 7;
 export const ALTERNATIVE_COUNT = 3;
+export const MAX_SUMMARY_POINTS = 4;
 
 const quoteSchema = z.object({
   startSeconds: z.number().nonnegative(),
@@ -68,10 +69,14 @@ const finalConclusionSchema = z.object({
   reasons: z.array(aiWrittenPointSchema).min(1),
 });
 
+// 음성에 나온 내용을 AI가 짧게 정리한 것이다. 화면에 항상 "AI 요약"으로 표시한다.
+const summarySchema = z.array(requiredText).min(1).max(MAX_SUMMARY_POINTS);
+
 // 결정 사항이 0개이면 화면에 "합의된 결론 없음"으로 표시한다.
-// isMeeting과 finalConclusion이 없는 보고서는 이 항목들이 생기기 전에 저장된 것이다.
+// isMeeting, summary, finalConclusion이 없는 보고서는 이 항목들이 생기기 전에 저장된 것이다.
 export const reportSchema = z.object({
   isMeeting: z.boolean().optional(),
+  summary: summarySchema.optional(),
   decisions: z.array(decisionSchema),
   unresolvedIssues: z.array(unresolvedIssueSchema),
   topics: z.array(topicSchema).min(1).max(MAX_TOPICS),
@@ -81,8 +86,9 @@ export const reportSchema = z.object({
 
 export type Report = z.infer<typeof reportSchema>;
 
-// AI가 분석 결과를 바탕으로 따로 만드는 부분이다. 새 보고서에는 둘 다 반드시 있어야 한다.
+// AI가 분석 결과를 바탕으로 따로 만드는 부분이다. 새 보고서에는 모두 반드시 있어야 한다.
 export const aiSuggestionsSchema = z.object({
+  summary: summarySchema,
   alternatives: reportSchema.shape.alternatives,
   finalConclusion: finalConclusionSchema,
 });
@@ -91,6 +97,7 @@ export type AiSuggestions = z.infer<typeof aiSuggestionsSchema>;
 
 // AI 제안을 뺀 분석 결과다. AI 제안은 따로 만든다.
 export const meetingAnalysisSchema = reportSchema.omit({
+  summary: true,
   alternatives: true,
   finalConclusion: true,
 });
