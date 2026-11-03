@@ -71,11 +71,12 @@ npm run lint   # ESLint
 
 ## 현재 상태
 
-- 진행 단계: 개발 단위 1~7번 완료, 8번(배포) 시작 전. 단위가 끝날 때마다 이 줄을 고친다.
-- 구글 로그인과 팀별 날짜별 저장(Must 4)을 8번 전에 추가했고, 개발 서버에서 실제 구글 로그인과 팀 권한을 확인했다. 8번에서 배포 주소를 Supabase의 허용 주소와 Site URL에 등록하고, `SUPABASE_PUBLISHABLE_KEY`를 Vercel 환경 변수에 올려야 한다.
-- 정리 기능(`POST /api/cleanup`)은 만들었지만 아직 자동으로 돌지 않는다. 8번에서 `CLEANUP_SECRET`을 등록하고 Supabase Cron에 매시간 실행으로 연결해야 음성 24시간 삭제와 팀 기능 전 보고서의 30일 삭제가 작동한다.
+- 진행 단계: 개발 단위 1~8번 완료, 9번(측정과 검증) 시작 전. 단위가 끝날 때마다 이 줄을 고친다.
+- 배포 주소는 https://decisionflow-sable.vercel.app 이다(Vercel 프로젝트 `decisionflow`, Hobby 요금제). 58.7분 가상 음성 1건이 배포 주소에서 끝까지 처리됐고 변환은 약 2분, 분석과 작성은 약 2분 걸렸다. GitHub 연결 없이 커밋된 파일만 꺼내 Vercel CLI로 배포했으므로 코드를 바꾸면 다시 배포해야 한다. `.env`가 올라가지 않도록 `.vercelignore`를 유지한다.
+- 구글 로그인과 팀별 날짜별 저장(Must 4)을 8번 전에 추가했다. 배포 주소를 Supabase의 허용 주소와 Site URL에 등록했다. 다른 사람이 로그인하려면 사용자가 Google Cloud 콘솔에서 동의 화면을 게시해야 한다.
+- 정리 기능(`POST /api/cleanup`)은 Supabase Cron `cleanup-hourly`가 매시간 부른다. 비밀값은 Supabase Vault의 `cleanup_secret`에 있으므로 `CLEANUP_SECRET`을 바꾸면 Vercel과 Vault를 함께 바꾼다.
 - 화면은 업로드 화면(`/`)과 보고서 화면(`/r/[id]`)이 있다. 보고서 화면은 처리 중이면 진행 단계를 보여 주고 5초마다 확인해 저절로 바뀐다. 처리는 화면과 분리되어 서버에서 변환과 분석 두 단계로 실행된다(`lib/server/pipeline.ts`). Supabase 테이블과 `audio` 저장 공간을 만들었고, 서버 전용 코드는 `lib/server/`에 있다.
-- 보고서 메일 발송(Must 3)과 하루 5건 제한(개발 단위 7번의 일부)을 추가했다. 개발 서버에서 실제 메일 수신까지 확인했다. 메일의 링크는 요청 주소를 따르므로 다른 사람이 열려면 배포(8번)가 필요하고, 그때 Gmail 값도 Vercel 환경 변수에 등록한다.
+- 보고서 메일 발송(Must 3)과 하루 5건 제한(개발 단위 7번의 일부)을 추가했다. 메일의 링크는 요청 주소를 따르므로 배포 주소에서 올린 건은 배포 주소로 연결된다.
 - Git 저장소이며 기본 브랜치는 `main`이다. `trash-can/`과 `.bkit/`(플러그인 작업 기록)은 `.gitignore`로 제외한다.
 - `@/*`는 프로젝트 루트를 가리키고, `src/` 폴더는 쓰지 않는다.
 - `next.config.ts`에서 `cacheComponents`와 `partialPrefetching`이 켜져 있으며, Tailwind는 `@tailwindcss/turbopack` 로더로 처리한다.
