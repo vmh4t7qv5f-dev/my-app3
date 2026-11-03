@@ -32,7 +32,8 @@ export type UploadErrorCode =
   | "daily_limit"
   | "invalid_recipients"
   | "login_required"
-  | "not_team_member";
+  | "not_team_member"
+  | "guest_email_blocked";
 
 export const UPLOAD_ERROR_MESSAGES: Record<UploadErrorCode, string> = {
   unsupported_format:
@@ -63,6 +64,8 @@ export const UPLOAD_ERROR_MESSAGES: Record<UploadErrorCode, string> = {
     "로그인이 끝났습니다. 화면을 새로고침해 다시 로그인한 뒤 올려 주세요.",
   not_team_member:
     "이 팀의 팀원이 아닙니다. 화면을 새로고침해 저장할 팀을 다시 골라 주세요.",
+  guest_email_blocked:
+    "게스트는 메일을 보낼 수 없습니다. 메일을 보내려면 구글로 로그인해 주세요.",
 };
 
 function isValidEmail(email: string): boolean {

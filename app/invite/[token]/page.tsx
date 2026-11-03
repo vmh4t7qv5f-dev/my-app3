@@ -32,6 +32,17 @@ async function InviteContent({
     );
   }
 
+  if (user.isGuest) {
+    return (
+      <div className="paper-card reveal-card p-5">
+        <p>
+          게스트는 팀에 참여할 수 없습니다. 로그아웃한 뒤 이 링크를 다시 열어 구글로
+          로그인해 주세요.
+        </p>
+      </div>
+    );
+  }
+
   const team = await getTeamByInvite(token);
   if (!team) {
     return (

@@ -28,10 +28,12 @@ export function LoginCard({
   next = "/",
   message = "구글 계정으로 로그인하면 팀을 만들고 회의 보고서를 날짜별로 저장할 수 있습니다.",
   hasError = false,
+  allowGuest = false,
 }: {
   next?: string;
   message?: string;
   hasError?: boolean;
+  allowGuest?: boolean;
 }) {
   return (
     <div className="glass-card glass-card--rose reveal-card mx-auto flex w-full max-w-md flex-col gap-5 p-6 sm:p-8">
@@ -59,6 +61,25 @@ export function LoginCard({
       <p className="text-center text-sm text-white/90">
         구글 비밀번호는 이 앱에 전달되지 않습니다.
       </p>
+      {allowGuest && (
+        <form
+          action="/auth/guest"
+          method="post"
+          className="flex flex-col gap-2 border-t border-white/30 pt-5"
+        >
+          <Button
+            type="submit"
+            size="lg"
+            variant="ghost"
+            className="w-full border-white/70 text-white hover:bg-white/15 hover:text-white"
+          >
+            게스트로 체험하기
+          </Button>
+          <p className="text-center text-sm break-keep text-white/90">
+            구글 계정 없이 음성을 올려 보고서를 받아 봅니다. 메일 발송은 할 수 없습니다.
+          </p>
+        </form>
+      )}
     </div>
   );
 }

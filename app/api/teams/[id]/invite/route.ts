@@ -17,6 +17,9 @@ export async function POST(
     if (!user || !isValidTeamId(id) || !(await isTeamMember(id, user.id))) {
       return Response.json({ error: "team_not_found" }, { status: 404 });
     }
+    if (user.isGuest) {
+      return Response.json({ error: "not_allowed" }, { status: 403 });
+    }
     await resetInviteToken(id);
     return new Response(null, { status: 204 });
   } catch {

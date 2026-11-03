@@ -141,7 +141,9 @@ async function TeamContent({ params }: { params: Promise<{ id: string }> }) {
             );
           })}
         </ul>
-        <InviteLinkBox teamId={team.id} inviteToken={team.inviteToken} />
+        {!user.isGuest && (
+          <InviteLinkBox teamId={team.id} inviteToken={team.inviteToken} />
+        )}
       </section>
     </>
   );

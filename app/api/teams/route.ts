@@ -7,6 +7,9 @@ export async function POST(request: Request) {
     if (!user) {
       return Response.json({ error: "login_required" }, { status: 401 });
     }
+    if (user.isGuest) {
+      return Response.json({ error: "not_allowed" }, { status: 403 });
+    }
 
     const body: { name?: unknown } | null = await request
       .json()

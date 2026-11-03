@@ -8,6 +8,7 @@ import { AUDIO_BUCKET, getSupabase } from "./supabase";
 
 const JOB_ID_PATTERN = /^[A-Za-z0-9_-]{32}$/;
 const DAILY_JOB_LIMIT = 5;
+const GUEST_REPORT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 // 암호학적 난수 24바이트로 만들어 링크를 추측할 수 없게 한다.
 function createJobId(): string {
@@ -235,9 +236,22 @@ export async function discardJob(id: string): Promise<void> {
 // 보고서를 저장한 뒤 음성을 지우고 작업을 완료로 표시한다.
 export async function completeJob(id: string, report: Report): Promise<void> {
   const supabase = getSupabase();
-  const { error: insertError } = await supabase
-    .from("reports")
-    .insert({ job_id: id, content: report });
+  const { data: job, error: teamError } = await supabase
+    .from("jobs")
+    .select("teams(is_guest)")
+    .eq("id", id)
+    .maybeSingle();
+  if (teamError) throw new Error("보고서를 저장하지 못했습니다.");
+  const team = job?.teams as unknown as { is_guest: boolean } | null;
+
+  // 팀 보고서는 직접 삭제할 때까지 두고, 게스트 체험 보고서만 만료일을 정한다.
+  const { error: insertError } = await supabase.from("reports").insert({
+    job_id: id,
+    content: report,
+    expires_at: team?.is_guest
+      ? new Date(Date.now() + GUEST_REPORT_MAX_AGE_MS).toISOString()
+      : null,
+  });
   if (insertError) throw new Error("보고서를 저장하지 못했습니다.");
 
   // 보고서는 이미 저장됐으므로 음성 삭제가 실패해도 작업을 실패시키지 않는다.

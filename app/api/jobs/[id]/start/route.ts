@@ -47,6 +47,11 @@ export async function POST(
       await discardJob(id);
       return Response.json({ error: "invalid_recipients" }, { status: 422 });
     }
+    // 누구나 게스트가 될 수 있으므로 앱의 Gmail이 스팸에 쓰이지 않게 막는다.
+    if (user.isGuest && recipientEmails.length > 0) {
+      await discardJob(id);
+      return Response.json({ error: "guest_email_blocked" }, { status: 403 });
+    }
 
     const audio = await downloadAudio(id);
     const problem = await findAudioProblem(audio);

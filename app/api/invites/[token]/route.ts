@@ -13,6 +13,9 @@ export async function POST(
     if (!user) {
       return Response.json({ error: "login_required" }, { status: 401 });
     }
+    if (user.isGuest) {
+      return Response.json({ error: "not_allowed" }, { status: 403 });
+    }
     const teamId = await joinTeamByInvite(token, user);
     if (!teamId) {
       return Response.json({ error: "invite_not_found" }, { status: 404 });

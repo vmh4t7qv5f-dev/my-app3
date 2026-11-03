@@ -16,13 +16,19 @@ async function HomeContent({
 }) {
   const { login_error: loginError } = await searchParams;
   const user = await getCurrentUser();
-  if (!user) return <LoginCard hasError={Boolean(loginError)} />;
+  if (!user) return <LoginCard hasError={Boolean(loginError)} allowGuest />;
 
   const teams = await getUserTeams(user.id);
 
   return (
     <>
       <AccountBar user={user} teams={teams} />
+      {user.isGuest && (
+        <p className="paper-card p-4 text-sm leading-relaxed">
+          게스트로 체험 중입니다. 로그아웃하면 이 보고서를 다시 볼 수 없고, 보고서는 30일
+          뒤 자동으로 삭제됩니다. 하루 처리 건수는 모든 사용자가 함께 씁니다.
+        </p>
+      )}
       {teams.length === 0 ? (
         <div className="paper-card reveal-card flex flex-col gap-4 p-5 sm:p-6">
           <p>
@@ -33,15 +39,17 @@ async function HomeContent({
         </div>
       ) : (
         <>
-          <UploadForm teams={teams} />
-          <details className="paper-card p-5">
-            <summary className="cursor-pointer font-semibold">
-              다른 팀 만들기
-            </summary>
-            <div className="mt-4">
-              <CreateTeamForm />
-            </div>
-          </details>
+          <UploadForm teams={teams} isGuest={user.isGuest} />
+          {!user.isGuest && (
+            <details className="paper-card p-5">
+              <summary className="cursor-pointer font-semibold">
+                다른 팀 만들기
+              </summary>
+              <div className="mt-4">
+                <CreateTeamForm />
+              </div>
+            </details>
+          )}
         </>
       )}
     </>

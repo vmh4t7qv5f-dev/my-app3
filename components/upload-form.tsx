@@ -120,7 +120,13 @@ function uploadFile(
   });
 }
 
-export function UploadForm({ teams }: { teams: { id: string; name: string }[] }) {
+export function UploadForm({
+  teams,
+  isGuest = false,
+}: {
+  teams: { id: string; name: string }[];
+  isGuest?: boolean;
+}) {
   const router = useRouter();
   const [teamId, setTeamId] = useState(teams[0].id);
   const [file, setFile] = useState<File | null>(null);
@@ -263,7 +269,11 @@ export function UploadForm({ teams }: { teams: { id: string; name: string }[] })
           ))}
         </select>
       </div>
-      <div className="grid gap-[clamp(8px,1.5vw,23px)] lg:grid-cols-3">
+      <div
+        className={`grid gap-[clamp(8px,1.5vw,23px)] ${
+          isGuest ? "lg:grid-cols-2" : "lg:grid-cols-3"
+        }`}
+      >
       <div
         className="glass-card glass-card--rose reveal-card flex min-h-80 flex-col gap-4 p-5"
         style={{ "--reveal-delay": "0.25s" } as CSSProperties}
@@ -346,6 +356,7 @@ export function UploadForm({ teams }: { teams: { id: string; name: string }[] })
       )}
       </div>
 
+      {!isGuest && (
       <div
         className="glass-card glass-card--violet reveal-card flex flex-col gap-3 p-5"
         style={{ "--reveal-delay": "0.37s" } as CSSProperties}
@@ -379,6 +390,7 @@ export function UploadForm({ teams }: { teams: { id: string; name: string }[] })
           </label>
         )}
       </div>
+      )}
 
       <section
         aria-label="업로드 전 안내"
@@ -391,15 +403,21 @@ export function UploadForm({ teams }: { teams: { id: string; name: string }[] })
         <ul className="flex list-disc flex-col gap-1.5 pl-5">
           <li>음성과 변환 텍스트는 분석을 위해 OpenAI로 전송됩니다.</li>
           <li>음성은 Supabase에 잠시 보관한 뒤 분석이 끝나면 바로 삭제합니다.</li>
-          <li>
-            보고서는 Supabase에 저장되며, 팀원이 직접 삭제할 때까지 팀에 보관됩니다.
-            팀원은 누구나 보고 삭제할 수 있습니다.
-          </li>
-          <li>
-            입력한 이메일 주소는 발송을 위해 Supabase에 잠시 보관되고 Gmail로
-            전송되며, 발송하거나 분석이 실패하면 바로 삭제합니다. 메일로 보낸
-            내용과 PDF는 받는 사람의 메일함에 남습니다.
-          </li>
+          {isGuest ? (
+            <li>보고서는 Supabase에 저장되며, 30일 뒤 자동으로 삭제됩니다.</li>
+          ) : (
+            <>
+              <li>
+                보고서는 Supabase에 저장되며, 팀원이 직접 삭제할 때까지 팀에 보관됩니다.
+                팀원은 누구나 보고 삭제할 수 있습니다.
+              </li>
+              <li>
+                입력한 이메일 주소는 발송을 위해 Supabase에 잠시 보관되고 Gmail로
+                전송되며, 발송하거나 분석이 실패하면 바로 삭제합니다. 메일로 보낸
+                내용과 PDF는 받는 사람의 메일함에 남습니다.
+              </li>
+            </>
+          )}
           <li>
             공개 자료나 직접 만든 가상 음성만 올려 주세요. 실제 회사의 내부 회의,
             대외비 음성, 상대방 동의 없이 녹음한 대화는 올리지 마세요.

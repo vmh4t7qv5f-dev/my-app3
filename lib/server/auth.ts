@@ -6,7 +6,14 @@ import { connection } from "next/server";
 
 import { getServerEnv } from "./env";
 
-export type CurrentUser = { id: string; name: string; email: string };
+export const GUEST_NAME = "게스트";
+
+export type CurrentUser = {
+  id: string;
+  name: string;
+  email: string;
+  isGuest: boolean;
+};
 
 // 사용자의 로그인 쿠키로 접속하는 연결이다. 로그인 처리에만 쓰고 데이터는 읽지 않는다.
 export async function createAuthClient() {
@@ -41,12 +48,17 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
+  if (user.is_anonymous) {
+    return { id: user.id, email: "", name: GUEST_NAME, isGuest: true };
+  }
+
   const email = user.email ?? "";
   const metadata = user.user_metadata as { full_name?: string; name?: string };
   return {
     id: user.id,
     email,
     name: metadata.full_name ?? metadata.name ?? email,
+    isGuest: false,
   };
 }
 

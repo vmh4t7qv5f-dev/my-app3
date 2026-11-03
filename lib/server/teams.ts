@@ -97,6 +97,7 @@ export async function createTeam(
       name,
       invite_token: createInviteToken(),
       created_by: user.id,
+      is_guest: user.isGuest,
     })
     .select("id")
     .single();
