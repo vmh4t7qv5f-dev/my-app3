@@ -1,6 +1,6 @@
 import "server-only";
 
-import { analyzeMeeting, generateAlternatives } from "./analyze";
+import { analyzeMeeting, generateAiSuggestions } from "./analyze";
 import { completeJob, failJob, markJobWriting } from "./jobs";
 import {
   isTranscriptTooShort,
@@ -42,7 +42,7 @@ export async function runTranscribeStage(
   }
 }
 
-// 2단계: 회의를 분석하고 대안을 만들어 보고서를 저장한다.
+// 2단계: 음성 내용을 분석하고 대안과 추천 결론을 만들어 보고서를 저장한다.
 export async function runAnalyzeStage(
   id: string,
   transcript: Transcript,
@@ -50,13 +50,13 @@ export async function runAnalyzeStage(
   try {
     const analysis = await analyzeMeeting(transcript);
     if (!analysis) {
-      await failJob(id, "not_a_meeting");
+      await failJob(id, "no_analyzable_speech");
       return;
     }
 
     await markJobWriting(id);
-    const { alternatives } = await generateAlternatives(transcript, analysis);
-    await completeJob(id, { ...analysis, alternatives });
+    const suggestions = await generateAiSuggestions(transcript, analysis);
+    await completeJob(id, { ...analysis, ...suggestions });
   } catch {
     await failSafely(id);
   }

@@ -3,14 +3,14 @@ import { ZodError } from "zod";
 
 import {
   meetingAnalysisSchema,
-  type Alternatives,
+  type AiSuggestions,
   type MeetingAnalysis,
   type MeetingAnalysisDraft,
 } from "./report";
 import type { TranscriptSegment } from "./server/transcribe";
 
 export type AnalysisReply = {
-  isMeeting: boolean;
+  isAnalyzable: boolean;
   analysis: MeetingAnalysisDraft | null;
 };
 
@@ -116,22 +116,22 @@ async function retryUntilAccepted<Reply, Result>(
   throw new Error("검사를 통과한 AI 답변을 받지 못했습니다.");
 }
 
-// 분석 답변을 받아 검사한다. 회의가 아니면 null을 돌려준다.
+// 분석 답변을 받아 검사한다. 분석할 말소리가 없으면 null을 돌려준다.
 export function getCheckedAnalysis(
   segments: TranscriptSegment[],
   requestReply: () => Promise<AnalysisReply | null>,
 ): Promise<MeetingAnalysis | null> {
   return retryUntilAccepted(requestReply, (reply) => {
-    if (reply && !reply.isMeeting) return null;
+    if (reply && !reply.isAnalyzable) return null;
     return reply?.analysis && hasOnlyRealQuotes(reply.analysis, segments)
       ? moveUnagreedDecisions(reply.analysis)
       : undefined;
   });
 }
 
-// 대안의 개수와 필수 항목은 답변 형식 검사에서 걸러진다.
-export function getCheckedAlternatives(
-  requestReply: () => Promise<Alternatives | null>,
-): Promise<Alternatives> {
+// 대안의 개수와 추천 결론의 필수 항목은 답변 형식 검사에서 걸러진다.
+export function getCheckedAiSuggestions(
+  requestReply: () => Promise<AiSuggestions | null>,
+): Promise<AiSuggestions> {
   return retryUntilAccepted(requestReply, (reply) => reply ?? undefined);
 }

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "DecisionFlow",
-  description: "회의 음성을 분석해 결정 사항, 미해결 문제, AI 대안을 담은 의사결정 보고서를 만듭니다.",
+  description: "회의나 대화 음성을 분석해 결정 사항, 미해결 문제, AI 대안과 추천 결론을 담은 의사결정 보고서를 만듭니다.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

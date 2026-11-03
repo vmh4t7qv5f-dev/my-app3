@@ -6,8 +6,8 @@ export default function Home() {
       <header className="flex flex-col gap-2">
         <h1 className="text-3xl font-semibold">DecisionFlow</h1>
         <p className="text-muted-foreground">
-          회의 음성을 올리면 결정 사항, 미해결 문제, AI 제안을 구분한 의사결정
-          보고서를 만듭니다.
+          회의나 대화 음성을 올리면 결정 사항, 미해결 문제, AI 제안과 추천
+          결론을 구분한 의사결정 보고서를 만듭니다.
         </p>
       </header>
       <UploadForm />

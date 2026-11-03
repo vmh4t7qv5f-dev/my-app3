@@ -19,7 +19,7 @@ export type UploadErrorCode =
   | "empty_file"
   | "damaged_file"
   | "too_little_speech"
-  | "not_a_meeting"
+  | "no_analyzable_speech"
   | "processing_failed"
   | "original_too_large"
   | "compression_failed";
@@ -36,9 +36,9 @@ export const UPLOAD_ERROR_MESSAGES: Record<UploadErrorCode, string> = {
   damaged_file:
     "파일을 읽을 수 없습니다. 손상되었거나 음성 파일이 아닐 수 있습니다. 원본을 다시 저장한 뒤 올려 주세요.",
   too_little_speech:
-    "음성에서 알아들은 내용이 300자 미만이라 분석할 수 없습니다. 회의 내용이 제대로 녹음되었는지 음성 파일을 확인하고 다시 올려 주세요.",
-  not_a_meeting:
-    "회의 음성으로 판단되지 않아 분석을 중단했습니다. 회의를 녹음한 파일이 맞는지 확인하고 다시 올려 주세요.",
+    "음성에서 알아들은 내용이 300자 미만이라 분석할 수 없습니다. 말소리가 제대로 녹음되었는지 음성 파일을 확인하고 다시 올려 주세요.",
+  no_analyzable_speech:
+    "노래나 잡음처럼 분석할 말소리가 없어 분석을 중단했습니다. 사람의 말이 녹음된 파일이 맞는지 확인하고 다시 올려 주세요.",
   processing_failed:
     "분석 중 문제가 생겨 보고서를 만들지 못했습니다. 파일을 다시 올려 주세요.",
   original_too_large:

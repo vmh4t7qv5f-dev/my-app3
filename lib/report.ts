@@ -62,28 +62,45 @@ const alternativeSchema = z.object({
   executionSteps: z.array(aiWrittenPointSchema).min(1),
 });
 
+// 합의된 결론이 아니라 AI가 추천하는 방향이다. 화면에 항상 "AI 제안"으로 표시한다.
+const finalConclusionSchema = z.object({
+  direction: requiredText,
+  reasons: z.array(aiWrittenPointSchema).min(1),
+});
+
 // 결정 사항이 0개이면 화면에 "합의된 결론 없음"으로 표시한다.
+// isMeeting과 finalConclusion이 없는 보고서는 이 항목들이 생기기 전에 저장된 것이다.
 export const reportSchema = z.object({
+  isMeeting: z.boolean().optional(),
   decisions: z.array(decisionSchema),
   unresolvedIssues: z.array(unresolvedIssueSchema),
   topics: z.array(topicSchema).min(1).max(MAX_TOPICS),
   alternatives: z.array(alternativeSchema).length(ALTERNATIVE_COUNT),
+  finalConclusion: finalConclusionSchema.optional(),
 });
 
 export type Report = z.infer<typeof reportSchema>;
 
-export const alternativesSchema = reportSchema.pick({ alternatives: true });
+// AI가 분석 결과를 바탕으로 따로 만드는 부분이다. 새 보고서에는 둘 다 반드시 있어야 한다.
+export const aiSuggestionsSchema = z.object({
+  alternatives: reportSchema.shape.alternatives,
+  finalConclusion: finalConclusionSchema,
+});
 
-export type Alternatives = z.infer<typeof alternativesSchema>;
+export type AiSuggestions = z.infer<typeof aiSuggestionsSchema>;
 
-// 대안을 뺀 회의 분석 결과다. 대안은 따로 만든다.
-export const meetingAnalysisSchema = reportSchema.omit({ alternatives: true });
+// AI 제안을 뺀 분석 결과다. AI 제안은 따로 만든다.
+export const meetingAnalysisSchema = reportSchema.omit({
+  alternatives: true,
+  finalConclusion: true,
+});
 
 export type MeetingAnalysis = z.infer<typeof meetingAnalysisSchema>;
 
-// AI의 회의 분석 답변이다. 동의 인용이 없는 결정도 일단 받아서 코드 검사에서
+// AI의 분석 답변이다. 동의 인용이 없는 결정도 일단 받아서 코드 검사에서
 // "미해결"로 옮기므로 이 단계에서는 빈 목록을 허용한다.
 export const meetingAnalysisDraftSchema = meetingAnalysisSchema.extend({
+  isMeeting: z.boolean(),
   decisions: z.array(
     decisionSchema.extend({ agreementQuotes: z.array(quoteSchema) }),
   ),

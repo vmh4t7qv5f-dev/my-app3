@@ -100,6 +100,8 @@ export function ReportView({ report }: { report: Report }) {
   const topicsWithSolutions = report.topics.filter(
     (topic) => topic.solutions.length > 0,
   );
+  // 이 항목이 생기기 전에 저장된 보고서는 모두 회의 보고서다.
+  const source = report.isMeeting === false ? "대화" : "회의";
 
   return (
     <article className="flex flex-col gap-10">
@@ -111,9 +113,9 @@ export function ReportView({ report }: { report: Report }) {
       </p>
 
       <div className="flex flex-col gap-8">
-        <h2 className="text-2xl font-bold">회의 내용</h2>
+        <h2 className="text-2xl font-bold">{source} 내용</h2>
 
-        <Section title="회의에서 결정된 사항">
+        <Section title={`${source}에서 결정된 사항`}>
           {report.decisions.length === 0 ? (
             <Empty>합의된 결론 없음</Empty>
           ) : (
@@ -196,7 +198,8 @@ export function ReportView({ report }: { report: Report }) {
         <div>
           <h2 className="text-2xl font-bold">AI 제안</h2>
           <p className="mt-1 text-sm">
-            회의에서 나온 내용이 아니라 AI가 제안하는 새로운 대안입니다.
+            {source}에서 나온 내용이 아니라 AI가 제안하는 새로운 대안과 추천
+            결론입니다.
           </p>
         </div>
         {report.alternatives.map((alternative, index) => (
@@ -220,6 +223,22 @@ export function ReportView({ report }: { report: Report }) {
             />
           </div>
         ))}
+        {report.finalConclusion && (
+          <div className="flex flex-col gap-3 rounded-lg border border-violet-400 bg-background p-4">
+            <h3 className="font-semibold">
+              <Label>AI 제안</Label>
+              AI 추천 결론
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {source}에서 합의된 결론이 아니라 AI가 추천하는 방향입니다.
+            </p>
+            <p className="font-medium">{report.finalConclusion.direction}</p>
+            <AlternativeList
+              title="추천 이유"
+              points={report.finalConclusion.reasons}
+            />
+          </div>
+        )}
       </section>
     </article>
   );
