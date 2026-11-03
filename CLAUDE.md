@@ -77,7 +77,7 @@ npm run lint   # ESLint
 - 정리 기능(`POST /api/cleanup`)은 Supabase Cron `cleanup-hourly`가 매시간 부른다. 비밀값은 Supabase Vault의 `cleanup_secret`에 있으므로 `CLEANUP_SECRET`을 바꾸면 Vercel과 Vault를 함께 바꾼다.
 - 화면은 업로드 화면(`/`)과 보고서 화면(`/r/[id]`)이 있다. 보고서 화면은 처리 중이면 진행 단계를 보여 주고 5초마다 확인해 저절로 바뀐다. 처리는 화면과 분리되어 서버에서 변환과 분석 두 단계로 실행된다(`lib/server/pipeline.ts`). Supabase 테이블과 `audio` 저장 공간을 만들었고, 서버 전용 코드는 `lib/server/`에 있다.
 - 보고서 메일 발송(Must 3)과 하루 5건 제한(개발 단위 7번의 일부)을 추가했다. 메일의 링크는 요청 주소를 따르므로 배포 주소에서 올린 건은 배포 주소로 연결된다.
-- Git 저장소이며 기본 브랜치는 `main`이다. `trash-can/`과 `.bkit/`(플러그인 작업 기록)은 `.gitignore`로 제외한다.
+- Git 저장소이며 로컬 기본 브랜치는 `main`이다. GitHub 공개 저장소의 기본 브랜치는 제출을 위해 `feature/deploy`로 정했고, GitHub에는 아직 `main`이 없다. `trash-can/`과 `.bkit/`(플러그인 작업 기록)은 `.gitignore`로 제외한다.
 - `@/*`는 프로젝트 루트를 가리키고, `src/` 폴더는 쓰지 않는다.
 - `next.config.ts`에서 `cacheComponents`와 `partialPrefetching`이 켜져 있으며, Tailwind는 `@tailwindcss/turbopack` 로더로 처리한다.
 
