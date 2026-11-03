@@ -36,7 +36,23 @@ async function ReportContent({ params }: { params: Promise<{ id: string }> }) {
   }
 
   const report = await getReport(id);
-  return report ? <ReportView report={report} /> : <p>{NOT_FOUND_MESSAGE}</p>;
+  if (!report) return <p>{NOT_FOUND_MESSAGE}</p>;
+
+  return (
+    <>
+      {job.emailStatus === "sent" && (
+        <p role="status" className="text-sm text-muted-foreground">
+          입력한 수신자에게 보고서 메일을 보냈습니다.
+        </p>
+      )}
+      {job.emailStatus === "failed" && (
+        <p role="alert" className="text-sm text-destructive">
+          보고서 메일을 보내지 못했습니다. 이 페이지의 링크를 직접 공유해 주세요.
+        </p>
+      )}
+      <ReportView report={report} />
+    </>
+  );
 }
 
 export default function ReportPage({ params }: PageProps<"/r/[id]">) {

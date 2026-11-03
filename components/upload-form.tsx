@@ -17,6 +17,8 @@ import {
   isUploadErrorCode,
   MAX_FILE_BYTES,
   MAX_ORIGINAL_FILE_BYTES,
+  MAX_RECIPIENTS,
+  parseRecipientText,
   UPLOAD_ERROR_MESSAGES,
   type UploadErrorCode,
 } from "@/lib/upload-rules";
@@ -118,6 +120,8 @@ export function UploadForm() {
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  const [recipientText, setRecipientText] = useState("");
+  const [hasConsent, setHasConsent] = useState(false);
   const latestSelection = useRef(0);
 
   const isUploading =
@@ -161,6 +165,14 @@ export function UploadForm() {
 
   async function handleStart() {
     if (!file || isUploading) return;
+
+    // 올리기 전에 확인해 파일을 다시 고르지 않아도 주소만 고칠 수 있게 한다.
+    const recipientEmails = parseRecipientText(recipientText);
+    if (!recipientEmails || (recipientEmails.length > 0 && !hasConsent)) {
+      setError(UPLOAD_ERROR_MESSAGES.invalid_recipients);
+      return;
+    }
+
     setError(null);
     setState({ step: "compressing", percent: 0 });
 
@@ -171,7 +183,10 @@ export function UploadForm() {
 
       setState({ step: "uploading", percent: 0 });
       const created = await fetch("/api/jobs", { method: "POST" });
-      if (!created.ok) throw new Error("job_create_failed");
+      if (!created.ok) {
+        const { error: code }: { error?: string } = await created.json();
+        throw new Error(code ?? "job_create_failed");
+      }
       const job: { id: string; uploadUrl: string } = await created.json();
 
       await uploadFile(job.uploadUrl, uploadable, (percent) =>
@@ -181,6 +196,8 @@ export function UploadForm() {
       setState({ step: "checking" });
       const started = await fetch(`/api/jobs/${job.id}/start`, {
         method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ recipientEmails, consent: hasConsent }),
       });
       if (!started.ok) {
         const { error: code }: { error?: string } = await started.json();
@@ -278,6 +295,37 @@ export function UploadForm() {
         </p>
       )}
 
+      <div className="flex flex-col gap-2">
+        <label htmlFor="recipient-emails" className="text-sm font-medium">
+          보고서를 메일로 받을 사람 (선택, 최대 {MAX_RECIPIENTS}명)
+        </label>
+        <textarea
+          id="recipient-emails"
+          rows={2}
+          value={recipientText}
+          disabled={isUploading}
+          onChange={(event) => setRecipientText(event.target.value)}
+          placeholder="a@example.com, b@example.com"
+          className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+        />
+        <p className="text-sm text-muted-foreground">
+          분석이 끝나면 결정 사항, 미해결 문제, AI 추천 결론과 보고서 링크를 자동으로
+          보냅니다. 창을 닫아도 발송됩니다.
+        </p>
+        {recipientText.trim() && (
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={hasConsent}
+              disabled={isUploading}
+              onChange={(event) => setHasConsent(event.target.checked)}
+            />
+            <span>수신자 모두가 이 보고서를 메일로 받는 데 동의했습니다.</span>
+          </label>
+        )}
+      </div>
+
       <section aria-label="업로드 전 안내" className="text-sm text-muted-foreground">
         <h2 className="mb-2 font-medium text-foreground">
           올리기 전에 확인해 주세요
@@ -286,6 +334,11 @@ export function UploadForm() {
           <li>음성과 변환 텍스트는 분석을 위해 OpenAI로 전송됩니다.</li>
           <li>음성은 Supabase에 잠시 보관한 뒤 분석이 끝나면 바로 삭제합니다.</li>
           <li>보고서는 Supabase에 저장되며 30일 뒤 자동으로 삭제됩니다.</li>
+          <li>
+            입력한 이메일 주소는 발송을 위해 Supabase에 잠시 보관되고 Gmail로
+            전송되며, 발송하거나 분석이 실패하면 바로 삭제합니다. 메일로 보낸
+            내용은 받는 사람의 메일함에 남습니다.
+          </li>
           <li>
             공개 자료나 직접 만든 가상 음성만 올려 주세요. 실제 회사의 내부 회의,
             대외비 음성, 상대방 동의 없이 녹음한 대화는 올리지 마세요.

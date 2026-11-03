@@ -7,6 +7,7 @@ import { reportSchema, type Report } from "@/lib/report";
 import { AUDIO_BUCKET, getSupabase } from "./supabase";
 
 const JOB_ID_PATTERN = /^[A-Za-z0-9_-]{32}$/;
+const DAILY_JOB_LIMIT = 5;
 
 // 암호학적 난수 24바이트로 만들어 링크를 추측할 수 없게 한다.
 function createJobId(): string {
@@ -68,18 +69,64 @@ function hashRunToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-// 같은 음성을 두 번 변환해 비용을 쓰지 않도록 대기 중인 작업만 시작한다.
+export type StartJobResult =
+  | { status: "started"; runToken: string }
+  | { status: "not_pending" }
+  | { status: "limit_reached" };
+
+// 같은 음성을 두 번 변환해 비용을 쓰지 않도록 대기 중인 작업만 시작하고, 오늘 사용량을 함께 차감한다.
 // 분석 단계를 부를 때 쓸 일회용 인증값을 돌려주며, DB에는 해시만 남긴다.
-export async function startJob(id: string): Promise<string | null> {
-  const token = randomBytes(32).toString("base64url");
+export async function startJob(
+  id: string,
+  recipientEmails: string[],
+): Promise<StartJobResult> {
+  const runToken = randomBytes(32).toString("base64url");
+  const { data, error } = await getSupabase().rpc("start_job", {
+    p_job_id: id,
+    p_run_token_hash: hashRunToken(runToken),
+    p_recipient_emails: recipientEmails.length > 0 ? recipientEmails : null,
+  });
+  if (error) throw new Error("작업 상태를 바꾸지 못했습니다.");
+  if (data === "started") return { status: "started", runToken };
+  return { status: data === "limit_reached" ? "limit_reached" : "not_pending" };
+}
+
+// 하루의 기준은 한국 시간 자정이다. 업로드 전에 미리 알려 주기 위한 확인이며, 실제 제한은 startJob이 지킨다.
+export async function isDailyLimitReached(): Promise<boolean> {
+  const today = new Date().toLocaleDateString("sv-SE", {
+    timeZone: "Asia/Seoul",
+  });
+  const { data, error } = await getSupabase()
+    .from("daily_usage")
+    .select("count")
+    .eq("day", today)
+    .maybeSingle();
+  if (error) throw new Error("오늘 사용량을 확인하지 못했습니다.");
+  return (data?.count ?? 0) >= DAILY_JOB_LIMIT;
+}
+
+export async function getRecipientEmails(id: string): Promise<string[]> {
   const { data, error } = await getSupabase()
     .from("jobs")
-    .update({ status: "transcribing", run_token_hash: hashRunToken(token) })
+    .select("recipient_emails")
     .eq("id", id)
-    .eq("status", "pending")
-    .select("id");
-  if (error) throw new Error("작업 상태를 바꾸지 못했습니다.");
-  return data.length > 0 ? token : null;
+    .maybeSingle();
+  if (error) throw new Error("수신자를 확인하지 못했습니다.");
+  return data?.recipient_emails ?? [];
+}
+
+export type EmailStatus = "sent" | "failed";
+
+// 발송 결과만 남기고 수신자 주소는 바로 지운다.
+export async function finishEmail(
+  id: string,
+  emailStatus: EmailStatus,
+): Promise<void> {
+  const { error } = await getSupabase()
+    .from("jobs")
+    .update({ email_status: emailStatus, recipient_emails: null })
+    .eq("id", id);
+  if (error) throw new Error("수신자 주소를 지우지 못했습니다.");
 }
 
 // 인증값이 맞으면 분석 상태로 바꾸고 인증값을 없앤다. 같은 값은 다시 쓸 수 없다.
@@ -106,23 +153,38 @@ export async function markJobWriting(id: string): Promise<void> {
   if (error) throw new Error("작업 상태를 바꾸지 못했습니다.");
 }
 
-export type JobState = { status: string; errorCode: string | null };
+export type JobState = {
+  status: string;
+  errorCode: string | null;
+  emailStatus: EmailStatus | null;
+};
 
 export async function getJobState(id: string): Promise<JobState | null> {
   const { data, error } = await getSupabase()
     .from("jobs")
-    .select("status, error_code")
+    .select("status, error_code, email_status")
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error("작업을 확인하지 못했습니다.");
-  return data && { status: data.status, errorCode: data.error_code };
+  return (
+    data && {
+      status: data.status,
+      errorCode: data.error_code,
+      emailStatus: data.email_status,
+    }
+  );
 }
 
-// 실패한 작업은 오류 코드만 남기고 음성을 지운다. 음성 삭제가 실패해도 정리 기능이 나중에 지운다.
+// 실패한 작업은 오류 코드만 남기고 음성과 수신자 주소를 지운다. 음성 삭제가 실패해도 정리 기능이 나중에 지운다.
 export async function failJob(id: string, errorCode: string): Promise<void> {
   const { error } = await getSupabase()
     .from("jobs")
-    .update({ status: "failed", error_code: errorCode, run_token_hash: null })
+    .update({
+      status: "failed",
+      error_code: errorCode,
+      run_token_hash: null,
+      recipient_emails: null,
+    })
     .eq("id", id);
   await removeAudio(id).catch(() => undefined);
   if (error) throw new Error("작업 상태를 바꾸지 못했습니다.");

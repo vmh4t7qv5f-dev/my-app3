@@ -27,7 +27,8 @@ export async function POST(
       return Response.json({ error: "invalid_transcript" }, { status: 400 });
     }
 
-    after(() => runAnalyzeStage(id, transcript.data));
+    const { origin } = new URL(request.url);
+    after(() => runAnalyzeStage(id, transcript.data, origin));
     return Response.json({ accepted: true }, { status: 202 });
   } catch {
     return Response.json({ error: "analyze_start_failed" }, { status: 500 });
