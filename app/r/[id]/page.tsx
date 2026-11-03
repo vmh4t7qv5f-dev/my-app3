@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import { DeleteReportButton } from "@/components/delete-report-button";
 import { DotText } from "@/components/dot-text";
+import { JobProgressSteps } from "@/components/job-progress-steps";
 import { JobWatcher } from "@/components/job-watcher";
 import { LoginCard } from "@/components/login-card";
 import { ReportLinkBox } from "@/components/report-link-box";
@@ -39,9 +40,18 @@ function UploadLink({ children }: { children: string }) {
   );
 }
 
-function JobProgress({ id, status }: { id: string; status: string }) {
-  const currentIndex = PROGRESS_STEPS.findIndex(
-    (step) => step.status === status,
+function JobProgress({
+  id,
+  status,
+  startedAt,
+}: {
+  id: string;
+  status: string;
+  startedAt: string;
+}) {
+  const currentIndex = Math.max(
+    PROGRESS_STEPS.findIndex((step) => step.status === status),
+    0,
   );
 
   return (
@@ -51,23 +61,11 @@ function JobProgress({ id, status }: { id: string; status: string }) {
         className="glass-card glass-card--rose reveal-card flex flex-col gap-3 p-5"
       >
         <p className="font-semibold">보고서를 만들고 있습니다.</p>
-        <ol className="flex flex-col gap-2">
-          {PROGRESS_STEPS.map((step, index) => (
-            <li
-              key={step.status}
-              aria-current={index === currentIndex ? "step" : undefined}
-              className={
-                index === currentIndex
-                  ? "font-semibold"
-                  : "text-white/85"
-              }
-            >
-              {index + 1}. {step.label}
-              {index < currentIndex && " (완료)"}
-              {index === currentIndex && " (진행 중)"}
-            </li>
-          ))}
-        </ol>
+        <JobProgressSteps
+          steps={PROGRESS_STEPS.map((step) => step.label)}
+          currentIndex={currentIndex}
+          startedAt={startedAt}
+        />
         <p className="text-sm leading-relaxed text-white/90">
           창을 닫아도 서버에서 계속 진행됩니다. 이 링크로 돌아오면 현재 상태를 볼 수
           있고, 끝나면 화면이 저절로 바뀝니다. 긴 음성은 10분 정도 걸릴 수 있습니다.
@@ -128,7 +126,11 @@ async function ReportContent({ params }: { params: Promise<{ id: string }> }) {
     );
   }
 
-  if (!report) return <JobProgress id={id} status={job.status} />;
+  if (!report) {
+    return (
+      <JobProgress id={id} status={job.status} startedAt={job.createdAt} />
+    );
+  }
 
   return (
     <>

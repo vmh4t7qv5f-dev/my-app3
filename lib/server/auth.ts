@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 
 import { getServerEnv } from "./env";
 
@@ -32,6 +33,8 @@ export async function createAuthClient() {
 
 // 쿠키만 믿지 않고 Supabase에 확인한 사용자만 돌려준다.
 export async function getCurrentUser(): Promise<CurrentUser | null> {
+  // 로그인 확인은 요청마다 해야 하며, 미리 만들어 두는 화면에 들어가면 안 된다.
+  await connection();
   const supabase = await createAuthClient();
   const {
     data: { user },

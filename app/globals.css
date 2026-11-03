@@ -216,12 +216,31 @@
     background: rgb(255 255 255 / 72%);
     box-shadow: 0 2px 4px rgb(50 28 39 / 8%);
   }
+  /* 진행 중인 단계의 막대 안에서 빛이 지나가 멈추지 않았음을 보여 준다. */
+  .progress-shimmer {
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    width: 45%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, transparent, #ffffff 50%, transparent);
+    animation: progress-shimmer 1.6s ease-in-out infinite;
+  }
   /* 화면이 처음 열릴 때 한 번만 차례로 나타난다. --reveal-delay로 순서를 정한다. */
   .reveal-text {
     animation: support-reveal 0.72s cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0s) both;
   }
   .reveal-card {
     animation: card-establish 0.76s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0s) both;
+  }
+}
+
+@keyframes progress-shimmer {
+  from {
+    translate: -100% 0;
+  }
+  to {
+    translate: 225% 0;
   }
 }
 
@@ -259,6 +278,13 @@
   body::before,
   .reveal-text,
   .reveal-card {
+    animation: none;
+  }
+  /* 움직이지 않아도 진행 중인 단계가 보이도록 막대를 채워 둔다. */
+  .progress-shimmer {
+    width: 100%;
+    opacity: 0.6;
+    background: #ffffff;
     animation: none;
   }
 }
