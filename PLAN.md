@@ -1,4 +1,4 @@
-# DecisionFlow 작업 계획 (PLAN)
+# MeetIQ 작업 계획 (PLAN)
 
 기준 문서: [PRD.md](PRD.md) | 설계 문서: [DESIGN.md](DESIGN.md)
 

@@ -1,4 +1,4 @@
-# DecisionFlow 서비스 기획서 (PRD)
+# MeetIQ 서비스 기획서 (PRD)
 
 부제: AI Decision Intelligence Platform
 작성자: 서비스 개발자 (Developer)

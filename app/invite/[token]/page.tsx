@@ -11,7 +11,7 @@ import { getTeamByInvite, isTeamMember } from "@/lib/server/teams";
 
 // 초대 링크가 검색에 잡히거나 다른 사이트로 주소가 넘어가지 않게 한다.
 export const metadata: Metadata = {
-  title: "팀 초대 | DecisionFlow",
+  title: "팀 초대 | MeetIQ",
   robots: { index: false, follow: false },
   referrer: "no-referrer",
 };
@@ -74,7 +74,7 @@ async function InviteContent({
 export default function InvitePage({ params }: PageProps<"/invite/[token]">) {
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-4 py-12">
-      <DotText text="DecisionFlow" className="h-6 self-start text-primary" />
+      <DotText text="MeetIQ" className="h-6 self-start text-primary" />
       <h1 className="text-[clamp(24px,3.1vw,40px)] leading-[1.223] font-normal tracking-[0.015em] text-[#202020]">
         팀 초대
       </h1>

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트
 
-DecisionFlow: 회의나 대화 음성 파일을 분석해 결정 사항, 미해결 문제, AI 대안 3가지와 AI 추천 결론을 담은 의사결정 보고서를 만드는 웹앱이다. 기능, 규칙, 범위의 기준 문서는 `PRD.md`다.
+MeetIQ: 회의나 대화 음성 파일을 분석해 결정 사항, 미해결 문제, AI 대안 3가지와 AI 추천 결론을 담은 의사결정 보고서를 만드는 웹앱이다. 기능, 규칙, 범위의 기준 문서는 `PRD.md`다.
 
 ## 작업 방식
 

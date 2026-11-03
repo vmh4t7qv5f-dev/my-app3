@@ -9,7 +9,7 @@ import { buildReportPdf } from "./report-pdf";
 
 const MAX_ATTEMPTS = 2;
 const CONNECTION_TIMEOUT_MS = 15_000;
-const SUBJECT = "[DecisionFlow] 의사결정 보고서가 완성되었습니다";
+const SUBJECT = "[MeetIQ] 의사결정 보고서가 완성되었습니다";
 const AI_NOTICE = "AI 분석은 틀릴 수 있습니다. 최종 판단은 반드시 사람이 해 주세요.";
 const LINK_NOTICE = "링크는 구글로 로그인한 팀원만 열 수 있습니다.";
 const PDF_NOTICE =
@@ -133,7 +133,7 @@ export async function sendReportEmail(
   const pdf = await buildReportPdf(report).catch(() => null);
 
   const message = {
-    from: { name: "DecisionFlow", address: user },
+    from: { name: "MeetIQ", address: user },
     to: user,
     bcc: recipients,
     subject: SUBJECT,

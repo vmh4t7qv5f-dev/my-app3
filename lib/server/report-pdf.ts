@@ -38,7 +38,7 @@ export function buildReportPdf(report: Report): Promise<Buffer> {
       margin: MARGIN,
       bufferPages: true,
       font: REGULAR_FONT,
-      info: { Title: "의사결정 보고서", Creator: "DecisionFlow" },
+      info: { Title: "의사결정 보고서", Creator: "MeetIQ" },
     });
     const chunks: Buffer[] = [];
     doc.on("data", (chunk: Buffer) => chunks.push(chunk));
@@ -182,7 +182,7 @@ export function buildReportPdf(report: Report): Promise<Buffer> {
         .fontSize(8.5)
         .fillColor(MUTED_COLOR)
         .text(
-          `DecisionFlow · ${index + 1} / ${count}`,
+          `MeetIQ · ${index + 1} / ${count}`,
           MARGIN,
           doc.page.height - MARGIN + 15,
           { width, align: "center", lineBreak: false },

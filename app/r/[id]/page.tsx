@@ -18,7 +18,7 @@ import { isUploadErrorCode, UPLOAD_ERROR_MESSAGES } from "@/lib/upload-rules";
 
 // 링크가 유일한 접근 수단이므로 검색에 잡히거나 다른 사이트로 주소가 넘어가지 않게 한다.
 export const metadata: Metadata = {
-  title: "의사결정 보고서 | DecisionFlow",
+  title: "의사결정 보고서 | MeetIQ",
   robots: { index: false, follow: false },
   referrer: "no-referrer",
 };
@@ -172,7 +172,7 @@ export default function ReportPage({ params }: PageProps<"/r/[id]">) {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-12">
       <header className="reveal-text flex flex-col gap-3">
-        <DotText text="DecisionFlow" className="h-6 self-start text-primary" />
+        <DotText text="MeetIQ" className="h-6 self-start text-primary" />
         <h1 className="text-[clamp(24px,3.1vw,40px)] leading-[1.223] font-normal tracking-[0.015em] text-[#202020]">
           의사결정 보고서
         </h1>

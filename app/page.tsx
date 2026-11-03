@@ -54,7 +54,7 @@ export default function Home({ searchParams }: PageProps<"/">) {
       <header className="grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,clamp(260px,32vw,483px))] md:gap-10">
         <h1 className="reveal-text m-0 text-primary">
           <DotText
-            text="DecisionFlow"
+            text="MeetIQ"
             className="h-[clamp(28px,4vw,46px)] max-w-full"
           />
         </h1>
