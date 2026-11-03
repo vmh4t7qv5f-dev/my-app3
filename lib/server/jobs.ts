@@ -157,12 +157,14 @@ export type JobState = {
   status: string;
   errorCode: string | null;
   emailStatus: EmailStatus | null;
+  emailPending: boolean;
 };
 
+// 수신자 주소 자체는 돌려주지 않고 발송을 기다리는지만 알린다.
 export async function getJobState(id: string): Promise<JobState | null> {
   const { data, error } = await getSupabase()
     .from("jobs")
-    .select("status, error_code, email_status")
+    .select("status, error_code, email_status, recipient_emails")
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error("작업을 확인하지 못했습니다.");
@@ -171,6 +173,7 @@ export async function getJobState(id: string): Promise<JobState | null> {
       status: data.status,
       errorCode: data.error_code,
       emailStatus: data.email_status,
+      emailPending: (data.recipient_emails?.length ?? 0) > 0,
     }
   );
 }
