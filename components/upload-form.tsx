@@ -320,8 +320,8 @@ export function UploadForm() {
           className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
         />
         <p className="text-sm text-muted-foreground">
-          분석이 끝나면 결정 사항, 미해결 문제, AI 추천 결론과 보고서 링크를 자동으로
-          보냅니다. 창을 닫아도 발송됩니다.
+          분석이 끝나면 핵심 요약과 보고서 링크, 보고서 PDF를 자동으로 보냅니다. 창을
+          닫아도 발송됩니다.
         </p>
         {recipientText.trim() && (
           <label className="flex items-start gap-2 text-sm">
@@ -348,7 +348,7 @@ export function UploadForm() {
           <li>
             입력한 이메일 주소는 발송을 위해 Supabase에 잠시 보관되고 Gmail로
             전송되며, 발송하거나 분석이 실패하면 바로 삭제합니다. 메일로 보낸
-            내용은 받는 사람의 메일함에 남습니다.
+            내용과 PDF는 받는 사람의 메일함에 남습니다.
           </li>
           <li>
             공개 자료나 직접 만든 가상 음성만 올려 주세요. 실제 회사의 내부 회의,

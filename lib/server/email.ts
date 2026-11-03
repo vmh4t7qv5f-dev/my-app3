@@ -5,6 +5,7 @@ import nodemailer from "nodemailer";
 import type { Report } from "@/lib/report";
 
 import { getServerEnv } from "./env";
+import { buildReportPdf } from "./report-pdf";
 
 const MAX_ATTEMPTS = 2;
 const CONNECTION_TIMEOUT_MS = 15_000;
@@ -12,6 +13,9 @@ const SUBJECT = "[DecisionFlow] 의사결정 보고서가 완성되었습니다"
 const AI_NOTICE = "AI 분석은 틀릴 수 있습니다. 최종 판단은 반드시 사람이 해 주세요.";
 const LINK_NOTICE =
   "링크는 30일 뒤 만료되며, 링크를 아는 사람은 누구나 보고 삭제할 수 있으니 공유에 주의해 주세요.";
+const PDF_NOTICE =
+  "보고서 전체를 PDF로 첨부했습니다. 발언 인용과 근거는 아래 링크에서 볼 수 있습니다.";
+const PDF_NAME_TOPIC_MAX_LENGTH = 40;
 
 type EmailBody = { text: string; html: string };
 
@@ -36,8 +40,31 @@ function toHtmlList(items: string[], empty: string): string {
     : `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 }
 
-// 핵심 요약과 링크만 담는다. 발언 인용과 AI 대안은 링크에서 본다.
-function buildEmailBody(report: Report, reportUrl: string): EmailBody {
+// 받은 사람이 파일만 보고도 구분하도록 첫 번째 사안의 제목과 한국 날짜를 넣는다.
+// 제목은 AI가 쓰므로 파일 이름에 쓸 수 없는 글자를 빼고 길이를 줄인다.
+export function buildPdfFileName(report: Report, now: Date): string {
+  const topic = Array.from(
+    (report.topics[0]?.title ?? "")
+      .replace(/[\\/:*?"<>|\p{Cc}]/gu, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
+  )
+    .slice(0, PDF_NAME_TOPIC_MAX_LENGTH)
+    .join("")
+    .replace(/[\s.]+$/, "");
+  const date = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+  }).format(now);
+
+  return ["의사결정 보고서", topic, date].filter(Boolean).join("_") + ".pdf";
+}
+
+// 본문에는 핵심 요약과 링크를 담는다. 나머지는 첨부 PDF와 링크에서 본다.
+function buildEmailBody(
+  report: Report,
+  reportUrl: string,
+  hasPdf: boolean,
+): EmailBody {
   const source = report.isMeeting === false ? "대화" : "회의";
   const decisions = report.decisions.map((decision) => decision.content);
   const unresolved = report.unresolvedIssues.map(
@@ -58,6 +85,7 @@ function buildEmailBody(report: Report, reportUrl: string): EmailBody {
     `■ ${decisionsTitle}\n${toTextList(decisions, "합의된 결론 없음")}`,
     `■ ${unresolvedTitle}\n${toTextList(unresolved, "미해결 문제 없음")}`,
     `■ ${conclusionTitle}\n${conclusionNotice}\n${direction}\n추천 이유\n${toTextList(reasons, "")}`,
+    ...(hasPdf ? [PDF_NOTICE] : []),
     `전체 보고서 보기: ${reportUrl}\n${LINK_NOTICE}`,
   ].join("\n\n");
 
@@ -72,6 +100,7 @@ function buildEmailBody(report: Report, reportUrl: string): EmailBody {
     `<p>${escapeHtml(direction)}</p>`,
     `<p>추천 이유</p>`,
     toHtmlList(reasons, ""),
+    hasPdf ? `<p>${escapeHtml(PDF_NOTICE)}</p>` : "",
     `<p><a href="${escapeHtml(reportUrl)}">전체 보고서 보기</a></p>`,
     `<p>${escapeHtml(LINK_NOTICE)}</p>`,
   ].join("");
@@ -93,12 +122,24 @@ export async function sendReportEmail(
     connectionTimeout: CONNECTION_TIMEOUT_MS,
   });
 
+  // PDF를 만들지 못해도 요약과 링크는 전달되도록 첨부 없이 보낸다.
+  const pdf = await buildReportPdf(report).catch(() => null);
+
   const message = {
     from: { name: "DecisionFlow", address: user },
     to: user,
     bcc: recipients,
     subject: SUBJECT,
-    ...buildEmailBody(report, reportUrl),
+    ...buildEmailBody(report, reportUrl, pdf !== null),
+    attachments: pdf
+      ? [
+          {
+            filename: buildPdfFileName(report, new Date()),
+            content: pdf,
+            contentType: "application/pdf",
+          },
+        ]
+      : [],
   };
 
   for (let attempt = 1; ; attempt++) {
