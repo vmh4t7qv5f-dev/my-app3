@@ -1,0 +1,7 @@
+# 비밀 값과 작업용 파일이 배포에 올라가지 않게 한다. Vercel CLI는 .gitignore를 읽지 않는다.
+.env*
+*.pem
+.claude
+.bkit
+trash-can
+test-audio
