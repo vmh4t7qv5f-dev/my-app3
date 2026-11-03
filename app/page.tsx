@@ -26,7 +26,7 @@ async function HomeContent({
       {user.isGuest && (
         <p className="paper-card p-4 text-sm leading-relaxed">
           게스트로 체험 중입니다. 로그아웃하면 이 보고서를 다시 볼 수 없고, 보고서는 30일
-          뒤 자동으로 삭제됩니다. 하루 처리 건수는 모든 사용자가 함께 씁니다.
+          뒤 자동으로 삭제됩니다.
         </p>
       )}
       {teams.length === 0 ? (

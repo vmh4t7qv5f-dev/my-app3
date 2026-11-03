@@ -1,5 +1,5 @@
 import { getCurrentUser } from "@/lib/server/auth";
-import { createJob, getRemainingJobsToday } from "@/lib/server/jobs";
+import { createJob } from "@/lib/server/jobs";
 import { isTeamMember, isValidTeamId } from "@/lib/server/teams";
 
 // 작업을 만들고 업로드 주소를 준다. 고유 링크는 업로드가 끝난 뒤 시작 요청에서 알려 준다.
@@ -18,9 +18,6 @@ export async function POST(request: Request) {
       return Response.json({ error: "not_team_member" }, { status: 403 });
     }
 
-    if ((await getRemainingJobsToday()) === 0) {
-      return Response.json({ error: "daily_limit" }, { status: 429 });
-    }
     const job = await createJob(teamId);
     return Response.json(job, { status: 201 });
   } catch {

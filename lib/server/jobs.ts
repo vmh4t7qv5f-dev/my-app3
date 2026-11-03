@@ -7,7 +7,6 @@ import { reportSchema, type Report } from "@/lib/report";
 import { AUDIO_BUCKET, getSupabase } from "./supabase";
 
 const JOB_ID_PATTERN = /^[A-Za-z0-9_-]{32}$/;
-const DAILY_JOB_LIMIT = 5;
 const GUEST_REPORT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 // 암호학적 난수 24바이트로 만들어 링크를 추측할 수 없게 한다.
@@ -76,10 +75,9 @@ function hashRunToken(token: string): string {
 
 export type StartJobResult =
   | { status: "started"; runToken: string }
-  | { status: "not_pending" }
-  | { status: "limit_reached" };
+  | { status: "not_pending" };
 
-// 같은 음성을 두 번 변환해 비용을 쓰지 않도록 대기 중인 작업만 시작하고, 오늘 사용량을 함께 차감한다.
+// 같은 음성을 두 번 변환해 비용을 쓰지 않도록 대기 중인 작업만 시작하고, 오늘 처리 건수를 함께 기록한다.
 // 분석 단계를 부를 때 쓸 일회용 인증값을 돌려주며, DB에는 해시만 남긴다.
 export async function startJob(
   id: string,
@@ -92,22 +90,9 @@ export async function startJob(
     p_recipient_emails: recipientEmails.length > 0 ? recipientEmails : null,
   });
   if (error) throw new Error("작업 상태를 바꾸지 못했습니다.");
-  if (data === "started") return { status: "started", runToken };
-  return { status: data === "limit_reached" ? "limit_reached" : "not_pending" };
-}
-
-// 하루의 기준은 한국 시간 자정이다. 업로드 전에 미리 알려 주기 위한 확인이며, 실제 제한은 startJob이 지킨다.
-export async function getRemainingJobsToday(): Promise<number> {
-  const today = new Date().toLocaleDateString("sv-SE", {
-    timeZone: "Asia/Seoul",
-  });
-  const { data, error } = await getSupabase()
-    .from("daily_usage")
-    .select("count")
-    .eq("day", today)
-    .maybeSingle();
-  if (error) throw new Error("오늘 사용량을 확인하지 못했습니다.");
-  return Math.max(DAILY_JOB_LIMIT - (data?.count ?? 0), 0);
+  return data === "started"
+    ? { status: "started", runToken }
+    : { status: "not_pending" };
 }
 
 export async function getRecipientEmails(id: string): Promise<string[]> {

@@ -29,11 +29,9 @@ export type UploadErrorCode =
   | "processing_failed"
   | "original_too_large"
   | "compression_failed"
-  | "daily_limit"
   | "invalid_recipients"
   | "login_required"
-  | "not_team_member"
-  | "guest_email_blocked";
+  | "not_team_member";
 
 export const UPLOAD_ERROR_MESSAGES: Record<UploadErrorCode, string> = {
   unsupported_format:
@@ -56,17 +54,12 @@ export const UPLOAD_ERROR_MESSAGES: Record<UploadErrorCode, string> = {
     "파일이 1GB를 넘어 자동으로 줄일 수 없습니다. 음성 변환 프로그램에서 mp3, 모노(1채널), 48kbps로 저장한 뒤 다시 올려 주세요.",
   compression_failed:
     "파일을 자동으로 줄이지 못했습니다. 음성 변환 프로그램에서 mp3, 모노(1채널), 48kbps로 저장한 뒤 다시 올려 주세요.",
-  daily_limit:
-    "오늘 처리할 수 있는 5건을 모두 사용했습니다. 내일(한국 시간 자정 이후) 다시 올려 주세요.",
   invalid_recipients:
     `이메일 주소를 확인해 주세요. 형식이 올바른 주소를 ${MAX_RECIPIENTS}개까지 입력할 수 있고, 수신자 동의 확인이 필요합니다.`,
   login_required:
     "로그인이 끝났습니다. 화면을 새로고침해 다시 로그인한 뒤 올려 주세요.",
   not_team_member:
-    "이 팀의 팀원이 아닙니다. 화면을 새로고침해 저장할 팀을 다시 골라 주세요.",
-  guest_email_blocked:
-    "게스트는 메일을 보낼 수 없습니다. 메일을 보내려면 구글로 로그인해 주세요.",
-};
+    "이 팀의 팀원이 아닙니다. 화면을 새로고침해 저장할 팀을 다시 골라 주세요.",};
 
 function isValidEmail(email: string): boolean {
   return email.length <= MAX_EMAIL_LENGTH && EMAIL_PATTERN.test(email);

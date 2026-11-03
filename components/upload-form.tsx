@@ -1,15 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type DragEvent,
-} from "react";
+import { useRef, useState, type CSSProperties, type DragEvent } from "react";
 
-import { DotText } from "@/components/dot-text";
 import { Button } from "@/components/ui/button";
 import {
   Progress,
@@ -136,18 +129,7 @@ export function UploadForm({
   const [isChecking, setIsChecking] = useState(false);
   const [recipientText, setRecipientText] = useState("");
   const [hasConsent, setHasConsent] = useState(false);
-  const [remainingToday, setRemainingToday] = useState<number | null>(null);
   const latestSelection = useRef(0);
-
-  // 건수를 읽지 못해도 올릴 수 있게 둔다. 실제 제한은 서버가 지킨다.
-  useEffect(() => {
-    fetch("/api/usage", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((usage: { remaining: number } | null) =>
-        setRemainingToday(usage?.remaining ?? null),
-      )
-      .catch(() => undefined);
-  }, []);
 
   const isUploading =
     state.step === "compressing" ||
@@ -269,11 +251,7 @@ export function UploadForm({
           ))}
         </select>
       </div>
-      <div
-        className={`grid gap-[clamp(8px,1.5vw,23px)] ${
-          isGuest ? "lg:grid-cols-2" : "lg:grid-cols-3"
-        }`}
-      >
+      <div className="grid gap-[clamp(8px,1.5vw,23px)] lg:grid-cols-3">
       <div
         className="glass-card glass-card--rose reveal-card flex min-h-80 flex-col gap-4 p-5"
         style={{ "--reveal-delay": "0.25s" } as CSSProperties}
@@ -356,7 +334,6 @@ export function UploadForm({
       )}
       </div>
 
-      {!isGuest && (
       <div
         className="glass-card glass-card--violet reveal-card flex flex-col gap-3 p-5"
         style={{ "--reveal-delay": "0.37s" } as CSSProperties}
@@ -390,7 +367,6 @@ export function UploadForm({
           </label>
         )}
       </div>
-      )}
 
       <section
         aria-label="업로드 전 안내"
@@ -406,18 +382,16 @@ export function UploadForm({
           {isGuest ? (
             <li>보고서는 Supabase에 저장되며, 30일 뒤 자동으로 삭제됩니다.</li>
           ) : (
-            <>
-              <li>
-                보고서는 Supabase에 저장되며, 팀원이 직접 삭제할 때까지 팀에 보관됩니다.
-                팀원은 누구나 보고 삭제할 수 있습니다.
-              </li>
-              <li>
-                입력한 이메일 주소는 발송을 위해 Supabase에 잠시 보관되고 Gmail로
-                전송되며, 발송하거나 분석이 실패하면 바로 삭제합니다. 메일로 보낸
-                내용과 PDF는 받는 사람의 메일함에 남습니다.
-              </li>
-            </>
+            <li>
+              보고서는 Supabase에 저장되며, 팀원이 직접 삭제할 때까지 팀에 보관됩니다.
+              팀원은 누구나 보고 삭제할 수 있습니다.
+            </li>
           )}
+          <li>
+            입력한 이메일 주소는 발송을 위해 Supabase에 잠시 보관되고 Gmail로
+            전송되며, 발송하거나 분석이 실패하면 바로 삭제합니다. 메일로 보낸
+            내용과 PDF는 받는 사람의 메일함에 남습니다.
+          </li>
           <li>
             공개 자료나 직접 만든 가상 음성만 올려 주세요. 실제 회사의 내부 회의,
             대외비 음성, 상대방 동의 없이 녹음한 대화는 올리지 마세요.
@@ -427,26 +401,10 @@ export function UploadForm({
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
-      {remainingToday === 0 && (
-        <p role="alert" className="text-sm text-destructive sm:mr-auto">
-          {UPLOAD_ERROR_MESSAGES.daily_limit}
-        </p>
-      )}
-      {remainingToday !== null && remainingToday > 0 && (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          오늘 남은 처리:
-          <DotText
-            text={String(remainingToday)}
-            className="h-5 text-primary"
-          />
-          건
-        </p>
-      )}
-
       <Button
         size="lg"
         className="w-full sm:w-64"
-        disabled={!file || isUploading || remainingToday === 0}
+        disabled={!file || isUploading}
         onClick={handleStart}
       >
         {state.step === "compressing"

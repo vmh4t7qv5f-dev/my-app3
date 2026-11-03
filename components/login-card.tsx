@@ -76,7 +76,7 @@ export function LoginCard({
             게스트로 체험하기
           </Button>
           <p className="text-center text-sm break-keep text-white/90">
-            구글 계정 없이 음성을 올려 보고서를 받아 봅니다. 메일 발송은 할 수 없습니다.
+            구글 계정 없이 음성을 올려 보고서를 받아 봅니다.
           </p>
         </form>
       )}
