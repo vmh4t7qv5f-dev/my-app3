@@ -71,9 +71,10 @@ npm run lint   # ESLint
 
 ## 현재 상태
 
-- 진행 단계: 개발 단위 1~6번 완료, 7번(삭제와 사용 제한) 중 하루 5건 제한만 완료. 단위가 끝날 때마다 이 줄을 고친다.
+- 진행 단계: 개발 단위 1~7번 완료, 8번(배포) 시작 전. 단위가 끝날 때마다 이 줄을 고친다.
+- 정리 기능(`POST /api/cleanup`)은 만들었지만 아직 자동으로 돌지 않는다. 8번에서 `CLEANUP_SECRET`을 등록하고 Supabase Cron에 매시간 실행으로 연결해야 음성 24시간, 보고서 30일 자동 삭제가 작동한다.
 - 화면은 업로드 화면(`/`)과 보고서 화면(`/r/[id]`)이 있다. 보고서 화면은 처리 중이면 진행 단계를 보여 주고 5초마다 확인해 저절로 바뀐다. 처리는 화면과 분리되어 서버에서 변환과 분석 두 단계로 실행된다(`lib/server/pipeline.ts`). Supabase 테이블과 `audio` 저장 공간을 만들었고, 서버 전용 코드는 `lib/server/`에 있다.
-- 보고서 메일 발송(Must 3)과 하루 5건 제한(개발 단위 7번의 일부)을 추가했다. 개발 서버에서 실제 메일 수신까지 확인했다. 메일의 링크는 요청 주소를 따르므로 다른 사람이 열려면 배포(8번)가 필요하고, 그때 Gmail 값도 Vercel 환경 변수에 등록한다. 멈춘 작업의 수신자 주소와 음성은 정리 기능(7번)이 있어야 지워진다.
+- 보고서 메일 발송(Must 3)과 하루 5건 제한(개발 단위 7번의 일부)을 추가했다. 개발 서버에서 실제 메일 수신까지 확인했다. 메일의 링크는 요청 주소를 따르므로 다른 사람이 열려면 배포(8번)가 필요하고, 그때 Gmail 값도 Vercel 환경 변수에 등록한다.
 - Git 저장소이며 기본 브랜치는 `main`이다. `trash-can/`과 `.bkit/`(플러그인 작업 기록)은 `.gitignore`로 제외한다.
 - `@/*`는 프로젝트 루트를 가리키고, `src/` 폴더는 쓰지 않는다.
 - `next.config.ts`에서 `cacheComponents`와 `partialPrefetching`이 켜져 있으며, Tailwind는 `@tailwindcss/turbopack` 로더로 처리한다.
@@ -128,7 +129,7 @@ npm run lint   # ESLint
 
 ## 환경 변수
 
-- 앱 코드에서는 `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`만 서버 쪽에서 사용한다. 이름에 `NEXT_PUBLIC_`을 붙이지 않는다.
+- 앱 코드에서는 `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `CLEANUP_SECRET`만 서버 쪽에서 사용한다. 이름에 `NEXT_PUBLIC_`을 붙이지 않는다.
 - `GITHUB_TOKEN`, `SUPABASE_ACCESS_TOKEN`, `VERCEL_TOKEN`은 개발·배포 작업용이므로 앱 코드에 쓰지 않고 Vercel 환경 변수에도 올리지 않는다.
 - `.env`를 확인할 때는 값을 출력하지 않고 이름과 값 유무만 확인한다. 값은 사용자가 직접 넣는다.
 - 키를 코드, 문서, 채팅에 적지 않는다. 유출이 의심되면 사용자에게 알려 즉시 폐기하고 새로 발급하게 한다.

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
+import { DeleteReportButton } from "@/components/delete-report-button";
 import { JobWatcher } from "@/components/job-watcher";
 import { ReportLinkBox } from "@/components/report-link-box";
 import { ReportView } from "@/components/report-view";
@@ -130,6 +131,7 @@ async function ReportContent({ params }: { params: Promise<{ id: string }> }) {
         </p>
       )}
       <ReportView report={report} />
+      <DeleteReportButton id={id} />
     </>
   );
 }

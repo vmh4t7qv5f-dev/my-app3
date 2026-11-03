@@ -92,7 +92,7 @@ export async function startJob(
 }
 
 // 하루의 기준은 한국 시간 자정이다. 업로드 전에 미리 알려 주기 위한 확인이며, 실제 제한은 startJob이 지킨다.
-export async function isDailyLimitReached(): Promise<boolean> {
+export async function getRemainingJobsToday(): Promise<number> {
   const today = new Date().toLocaleDateString("sv-SE", {
     timeZone: "Asia/Seoul",
   });
@@ -102,7 +102,7 @@ export async function isDailyLimitReached(): Promise<boolean> {
     .eq("day", today)
     .maybeSingle();
   if (error) throw new Error("오늘 사용량을 확인하지 못했습니다.");
-  return (data?.count ?? 0) >= DAILY_JOB_LIMIT;
+  return Math.max(DAILY_JOB_LIMIT - (data?.count ?? 0), 0);
 }
 
 export async function getRecipientEmails(id: string): Promise<string[]> {
@@ -217,7 +217,7 @@ async function removeAudio(id: string): Promise<void> {
   if (error) throw new Error("음성을 지우지 못했습니다.");
 }
 
-// 검사에 걸린 파일은 분석하지 않으므로 음성과 작업을 바로 지운다.
+// 검사에 걸렸거나 사용자가 삭제한 작업의 음성과 작업을 바로 지운다. 연결된 보고서도 함께 지워진다.
 export async function discardJob(id: string): Promise<void> {
   await removeAudio(id);
 

@@ -1,4 +1,4 @@
-import { getJobState, isValidJobId } from "@/lib/server/jobs";
+import { discardJob, getJobState, isValidJobId } from "@/lib/server/jobs";
 
 // 진행 상태 화면이 주기적으로 부른다. 진행 단계만 돌려주고 수신자 주소나 회의 내용은 넣지 않는다.
 export async function GET(
@@ -19,5 +19,27 @@ export async function GET(
     );
   } catch {
     return Response.json({ error: "job_read_failed" }, { status: 500 });
+  }
+}
+
+// 끝난 작업의 보고서를 지운다. 처리 중에 지우면 진행 중인 단계가 꼬이므로 막는다.
+export async function DELETE(
+  _request: Request,
+  ctx: RouteContext<"/api/jobs/[id]">,
+) {
+  const { id } = await ctx.params;
+
+  try {
+    const job = isValidJobId(id) ? await getJobState(id) : null;
+    if (!job || job.status === "pending") {
+      return Response.json({ error: "job_not_found" }, { status: 404 });
+    }
+    if (job.status !== "completed" && job.status !== "failed") {
+      return Response.json({ error: "job_running" }, { status: 409 });
+    }
+    await discardJob(id);
+    return new Response(null, { status: 204 });
+  } catch {
+    return Response.json({ error: "job_delete_failed" }, { status: 500 });
   }
 }

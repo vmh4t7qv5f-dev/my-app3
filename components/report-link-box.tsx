@@ -31,8 +31,8 @@ export function ReportLinkBox() {
         {COPY_LABELS[copyState]}
       </Button>
       <p className="text-muted-foreground">
-        이 링크를 잃으면 보고서를 되찾을 수 없습니다. 링크를 아는 사람은 누구나 볼
-        수 있으니 공유에 주의해 주세요.
+        이 링크를 잃으면 보고서를 되찾을 수 없습니다. 링크를 아는 사람은 누구나 보고
+        삭제할 수 있으니 공유에 주의해 주세요.
       </p>
     </div>
   );

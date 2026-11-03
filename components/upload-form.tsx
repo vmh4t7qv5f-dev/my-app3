@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, type DragEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -122,7 +122,18 @@ export function UploadForm() {
   const [isChecking, setIsChecking] = useState(false);
   const [recipientText, setRecipientText] = useState("");
   const [hasConsent, setHasConsent] = useState(false);
+  const [remainingToday, setRemainingToday] = useState<number | null>(null);
   const latestSelection = useRef(0);
+
+  // 건수를 읽지 못해도 올릴 수 있게 둔다. 실제 제한은 서버가 지킨다.
+  useEffect(() => {
+    fetch("/api/usage", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((usage: { remaining: number } | null) =>
+        setRemainingToday(usage?.remaining ?? null),
+      )
+      .catch(() => undefined);
+  }, []);
 
   const isUploading =
     state.step === "compressing" ||
@@ -346,10 +357,21 @@ export function UploadForm() {
         </ul>
       </section>
 
+      {remainingToday === 0 && (
+        <p role="alert" className="text-sm text-destructive">
+          {UPLOAD_ERROR_MESSAGES.daily_limit}
+        </p>
+      )}
+      {remainingToday !== null && remainingToday > 0 && (
+        <p className="text-right text-sm text-muted-foreground">
+          오늘 남은 처리: {remainingToday}건
+        </p>
+      )}
+
       <Button
         size="lg"
         className="w-full"
-        disabled={!file || isUploading}
+        disabled={!file || isUploading || remainingToday === 0}
         onClick={handleStart}
       >
         {state.step === "compressing"
