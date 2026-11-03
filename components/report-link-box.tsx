@@ -12,7 +12,7 @@ const COPY_LABELS: Record<CopyState, string> = {
   failed: "복사하지 못했습니다. 주소창의 링크를 직접 복사해 주세요",
 };
 
-// 로그인이 없어 링크가 유일한 접근 수단이므로 잃지 않도록 복사 버튼과 함께 안내한다.
+// 팀원에게 보고서를 바로 전할 수 있도록 복사 버튼과 함께 누가 열 수 있는지 안내한다.
 export function ReportLinkBox() {
   const [copyState, setCopyState] = useState<CopyState>("idle");
 
@@ -31,8 +31,8 @@ export function ReportLinkBox() {
         {COPY_LABELS[copyState]}
       </Button>
       <p className="text-muted-foreground">
-        이 링크를 잃으면 보고서를 되찾을 수 없습니다. 링크를 아는 사람은 누구나 보고
-        삭제할 수 있으니 공유에 주의해 주세요.
+        이 링크는 로그인한 팀원만 열 수 있습니다. 보고서는 팀 화면의 날짜별 목록에서도
+        찾을 수 있습니다.
       </p>
     </div>
   );

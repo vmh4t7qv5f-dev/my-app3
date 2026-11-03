@@ -120,8 +120,9 @@ function uploadFile(
   });
 }
 
-export function UploadForm() {
+export function UploadForm({ teams }: { teams: { id: string; name: string }[] }) {
   const router = useRouter();
+  const [teamId, setTeamId] = useState(teams[0].id);
   const [file, setFile] = useState<File | null>(null);
   const [state, setState] = useState<UploadState>({ step: "idle" });
   const [error, setError] = useState<string | null>(null);
@@ -200,7 +201,11 @@ export function UploadForm() {
       );
 
       setState({ step: "uploading", percent: 0 });
-      const created = await fetch("/api/jobs", { method: "POST" });
+      const created = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ teamId }),
+      });
       if (!created.ok) {
         const { error: code }: { error?: string } = await created.json();
         throw new Error(code ?? "job_create_failed");
@@ -240,6 +245,24 @@ export function UploadForm() {
 
   return (
     <div className="flex flex-col gap-6">
+      <div className="paper-card flex flex-wrap items-center gap-3 p-4">
+        <label htmlFor="upload-team" className="font-semibold">
+          저장할 팀
+        </label>
+        <select
+          id="upload-team"
+          value={teamId}
+          disabled={isUploading}
+          onChange={(event) => setTeamId(event.target.value)}
+          className="h-9 max-w-full rounded-[10px] border border-input bg-white px-3 text-sm"
+        >
+          {teams.map((team) => (
+            <option key={team.id} value={team.id}>
+              {team.name}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="grid gap-[clamp(8px,1.5vw,23px)] lg:grid-cols-3">
       <div
         className="glass-card glass-card--rose reveal-card flex min-h-80 flex-col gap-4 p-5"
@@ -368,7 +391,10 @@ export function UploadForm() {
         <ul className="flex list-disc flex-col gap-1.5 pl-5">
           <li>음성과 변환 텍스트는 분석을 위해 OpenAI로 전송됩니다.</li>
           <li>음성은 Supabase에 잠시 보관한 뒤 분석이 끝나면 바로 삭제합니다.</li>
-          <li>보고서는 Supabase에 저장되며 30일 뒤 자동으로 삭제됩니다.</li>
+          <li>
+            보고서는 Supabase에 저장되며, 팀원이 직접 삭제할 때까지 팀에 보관됩니다.
+            팀원은 누구나 보고 삭제할 수 있습니다.
+          </li>
           <li>
             입력한 이메일 주소는 발송을 위해 Supabase에 잠시 보관되고 Gmail로
             전송되며, 발송하거나 분석이 실패하면 바로 삭제합니다. 메일로 보낸

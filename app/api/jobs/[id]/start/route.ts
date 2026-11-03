@@ -1,6 +1,7 @@
 import { after } from "next/server";
 
 import { findAudioProblem } from "@/lib/server/audio-check";
+import { getCurrentUser } from "@/lib/server/auth";
 import {
   discardJob,
   downloadAudio,
@@ -11,6 +12,7 @@ import {
   startJob,
 } from "@/lib/server/jobs";
 import { runTranscribeStage } from "@/lib/server/pipeline";
+import { getAccessibleJobTeamId } from "@/lib/server/teams";
 import { parseRecipientRequest } from "@/lib/upload-rules";
 
 export const maxDuration = 300;
@@ -23,7 +25,15 @@ export async function POST(
   const { id } = await ctx.params;
 
   try {
-    if (!isValidJobId(id) || !(await isJobWaitingForStart(id))) {
+    const user = await getCurrentUser();
+    if (!user) {
+      return Response.json({ error: "login_required" }, { status: 401 });
+    }
+    if (
+      !isValidJobId(id) ||
+      !(await getAccessibleJobTeamId(id, user.id)) ||
+      !(await isJobWaitingForStart(id))
+    ) {
       return Response.json({ error: "job_not_found" }, { status: 404 });
     }
     if (!(await isAudioUploaded(id))) {

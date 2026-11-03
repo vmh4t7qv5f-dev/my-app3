@@ -11,8 +11,7 @@ const MAX_ATTEMPTS = 2;
 const CONNECTION_TIMEOUT_MS = 15_000;
 const SUBJECT = "[DecisionFlow] 의사결정 보고서가 완성되었습니다";
 const AI_NOTICE = "AI 분석은 틀릴 수 있습니다. 최종 판단은 반드시 사람이 해 주세요.";
-const LINK_NOTICE =
-  "링크는 30일 뒤 만료되며, 링크를 아는 사람은 누구나 보고 삭제할 수 있으니 공유에 주의해 주세요.";
+const LINK_NOTICE = "링크는 구글로 로그인한 팀원만 열 수 있습니다.";
 const PDF_NOTICE =
   "보고서 전체를 PDF로 첨부했습니다. 발언 인용과 근거는 아래 링크에서 볼 수 있습니다.";
 const PDF_NAME_TOPIC_MAX_LENGTH = 40;

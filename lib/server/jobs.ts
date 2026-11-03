@@ -23,11 +23,15 @@ export function getReportPath(id: string): string {
 }
 
 // 작업을 만들고 브라우저가 음성을 올릴 일회용 주소를 발급한다.
-export async function createJob(): Promise<{ id: string; uploadUrl: string }> {
+export async function createJob(
+  teamId: string,
+): Promise<{ id: string; uploadUrl: string }> {
   const supabase = getSupabase();
   const id = createJobId();
 
-  const { error: insertError } = await supabase.from("jobs").insert({ id });
+  const { error: insertError } = await supabase
+    .from("jobs")
+    .insert({ id, team_id: teamId });
   if (insertError) throw new Error("작업을 만들지 못했습니다.");
 
   const { data, error: signError } = await supabase.storage
@@ -194,12 +198,13 @@ export async function failJob(id: string, errorCode: string): Promise<void> {
 }
 
 // 없거나 만료된 보고서는 null을 돌려준다. 정리 기능이 지우기 전이라도 만료되면 보이지 않는다.
+// 팀 보고서는 만료일이 없어 직접 지울 때까지 보인다.
 export async function getReport(id: string): Promise<Report | null> {
   const { data, error } = await getSupabase()
     .from("reports")
     .select("content")
     .eq("job_id", id)
-    .gt("expires_at", new Date().toISOString())
+    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
     .maybeSingle();
   if (error) throw new Error("보고서를 읽지 못했습니다.");
   if (!data) return null;

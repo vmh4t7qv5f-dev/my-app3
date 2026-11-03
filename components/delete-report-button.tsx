@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
-// 링크를 아는 사람은 누구나 삭제할 수 있고 되돌릴 수 없으므로 확인 창을 거친다.
+// 팀원은 누구나 삭제할 수 있고 되돌릴 수 없으므로 확인 창을 거친다.
 export function DeleteReportButton({ id }: { id: string }) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -49,8 +49,8 @@ export function DeleteReportButton({ id }: { id: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle>보고서를 삭제할까요?</AlertDialogTitle>
             <AlertDialogDescription>
-              삭제하면 되돌릴 수 없고, 이 링크를 가진 모든 사람이 더 이상 볼 수
-              없습니다. 이미 보낸 메일은 지워지지 않습니다.
+              삭제하면 되돌릴 수 없고, 모든 팀원이 더 이상 볼 수 없습니다. 이미 보낸
+              메일은 지워지지 않습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

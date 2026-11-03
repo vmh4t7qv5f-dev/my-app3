@@ -6,10 +6,13 @@ import { Suspense } from "react";
 import { DeleteReportButton } from "@/components/delete-report-button";
 import { DotText } from "@/components/dot-text";
 import { JobWatcher } from "@/components/job-watcher";
+import { LoginCard } from "@/components/login-card";
 import { ReportLinkBox } from "@/components/report-link-box";
 import { ReportView } from "@/components/report-view";
 import { buttonVariants } from "@/components/ui/button";
+import { getCurrentUser } from "@/lib/server/auth";
 import { getJobState, getReport, isValidJobId } from "@/lib/server/jobs";
+import { getAccessibleJobTeamId } from "@/lib/server/teams";
 import { isUploadErrorCode, UPLOAD_ERROR_MESSAGES } from "@/lib/upload-rules";
 
 // 링크가 유일한 접근 수단이므로 검색에 잡히거나 다른 사이트로 주소가 넘어가지 않게 한다.
@@ -20,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 const NOT_FOUND_MESSAGE =
-  "보고서를 찾을 수 없습니다. 삭제되었거나 30일이 지났거나 링크가 잘못되었을 수 있습니다.";
+  "보고서를 찾을 수 없습니다. 삭제되었거나 링크가 잘못되었거나, 이 보고서가 속한 팀의 팀원이 아닐 수 있습니다.";
 
 const PROGRESS_STEPS = [
   { status: "transcribing", label: "음성 변환" },
@@ -81,7 +84,21 @@ async function ReportContent({ params }: { params: Promise<{ id: string }> }) {
   // 보고서는 캐시하지 않고 요청마다 읽는다.
   await connection();
 
-  const job = isValidJobId(id) ? await getJobState(id) : null;
+  const user = await getCurrentUser();
+  if (!user) {
+    return (
+      <LoginCard
+        next={`/r/${id}`}
+        message="이 보고서는 팀원만 볼 수 있습니다. 구글 계정으로 로그인해 주세요."
+      />
+    );
+  }
+
+  // 팀원이 아니면 보고서가 있는지도 알 수 없게 없는 링크와 똑같이 다룬다.
+  const teamId = isValidJobId(id)
+    ? await getAccessibleJobTeamId(id, user.id)
+    : null;
+  const job = teamId ? await getJobState(id) : null;
   // 시작되지 않은 작업의 주소도 없는 링크처럼 다룬다.
   const report =
     job?.status === "completed" ? await getReport(id) : null;
@@ -115,6 +132,15 @@ async function ReportContent({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <>
+      <Link
+        href={`/teams/${teamId}`}
+        className={buttonVariants({
+          variant: "outline",
+          className: "self-start",
+        })}
+      >
+        팀의 날짜별 보고서로
+      </Link>
       <ReportLinkBox />
       {job.emailPending && (
         <>
